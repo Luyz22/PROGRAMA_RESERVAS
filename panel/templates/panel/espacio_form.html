@@ -1,0 +1,23 @@
+{% extends "panel/base_panel.html" %}
+
+{% block titulo %}{% if espacio %}Editar {{ espacio.nombre }}{% else %}Nuevo espacio{% endif %} · Panel{% endblock %}
+
+{% block panel %}
+<a href="{% url 'panel:espacios' %}" class="small fw-semibold text-decoration-none"><i class="bi bi-chevron-left"></i> Espacios</a>
+<h1 class="h2 mt-2 mb-4">{% if espacio %}Editar {{ espacio.nombre }}{% else %}Nuevo espacio{% endif %}</h1>
+
+<form method="post" class="tarjeta p-3 p-md-4" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="row g-3">
+    <div class="col-md-8">{% include "panel/_campo.html" with campo=form.nombre %}</div>
+    <div class="col-md-4">{% include "panel/_campo.html" with campo=form.tipo %}</div>
+    <div class="col-12">{% include "panel/_campo.html" with campo=form.descripcion %}</div>
+    <div class="col-12">{% include "panel/_campo.html" with campo=form.activo %}</div>
+  </div>
+  <div class="d-flex gap-2 mt-4">
+    <button type="submit" class="btn btn-verde">{% if espacio %}Guardar cambios{% else %}Crear espacio{% endif %}</button>
+    <a href="{% url 'panel:espacios' %}" class="btn btn-outline-secondary">Volver</a>
+  </div>
+</form>
+{% endblock %}

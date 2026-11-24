@@ -1,0 +1,15 @@
+{% if pagina.paginator.num_pages > 1 %}
+  <nav class="d-flex justify-content-between align-items-center mt-3 small" aria-label="Páginas">
+    <span class="text-body-secondary">Página {{ pagina.number }} de {{ pagina.paginator.num_pages }} · {{ pagina.paginator.count }} en total</span>
+    <div class="d-flex gap-2">
+      {% if pagina.has_previous %}
+        <a class="btn btn-sm btn-outline-secondary" href="?{{ parametros }}{% if parametros %}&{% endif %}pagina={{ pagina.previous_page_number }}">Anterior</a>
+      {% endif %}
+      {% if pagina.has_next %}
+        <a class="btn btn-sm btn-outline-secondary" href="?{{ parametros }}{% if parametros %}&{% endif %}pagina={{ pagina.next_page_number }}">Siguiente</a>
+      {% endif %}
+    </div>
+  </nav>
+{% elif pagina.paginator.count %}
+  <p class="small text-body-secondary mt-3 mb-0">{{ pagina.paginator.count }} en total</p>
+{% endif %}

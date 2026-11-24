@@ -1,0 +1,94 @@
+{% extends "panel/base_panel.html" %}
+{% load horas %}
+
+{% block titulo %}Panel de administración{% endblock %}
+
+{% block panel %}
+<h1 class="h2 mb-0">Panel de administración</h1>
+<p class="text-body-secondary text-capitalize">{{ hoy|date:"l" }} <span class="text-lowercase">{{ hoy|date:"j \d\e F" }}</span></p>
+
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Reservas de hoy</div><div class="numero">{{ confirmadas_hoy }}</div></div></div>
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Ocupación del día</div><div class="numero">{{ ocupacion }} %</div></div></div>
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Franjas bloqueadas hoy</div><div class="numero">{{ bloqueos_hoy }}</div></div></div>
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Próximas reservas</div><div class="numero">{{ proximas_reservas }}</div></div></div>
+</div>
+
+<section class="tarjeta p-3 p-md-4 mb-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h2 class="h5 mb-0">Reservas de hoy</h2>
+    <a href="{% url 'panel:reservas' %}" class="small fw-semibold text-decoration-none">Ver todas <i class="bi bi-chevron-right"></i></a>
+  </div>
+  {% if reservas_hoy %}
+    {% include "panel/_tabla_reservas.html" with reservas=reservas_hoy mostrar_fecha=False %}
+  {% else %}
+    <p class="text-body-secondary mb-0">Hoy no hay reservas.</p>
+  {% endif %}
+</section>
+
+<section class="tarjeta p-3 p-md-4 mb-4" id="bloquear">
+  <h2 class="h5 mb-1">Bloquear un espacio</h2>
+  <p class="small text-body-secondary">La franja bloqueada aparece como "Mantenimiento" y nadie la puede reservar. Si ya tiene una reserva, cancélala primero.</p>
+  <form method="post" action="{% url 'panel:bloquear' %}" class="row g-3 align-items-end">
+    {% csrf_token %}
+    <div class="col-md-4">
+      <label class="form-label fw-medium" for="b-espacio">Espacio</label>
+      <select class="form-select" id="b-espacio" name="espacio" required>
+        <option value="">Elige…</option>
+        {% for e in espacios %}
+          <option value="{{ e.pk }}" {% if datos_bloqueo.espacio == e.pk|stringformat:"d" %}selected{% endif %}>{{ e.nombre }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-medium" for="b-fecha">Fecha</label>
+      <input type="date" class="form-control" id="b-fecha" name="fecha" min="{{ hoy|date:'Y-m-d' }}"
+             value="{{ datos_bloqueo.fecha|default:'' }}" required>
+    </div>
+    <div class="col-md-4">
+      <label class="form-label fw-medium" for="b-hora">Franja</label>
+      <select class="form-select" id="b-hora" name="hora" required>
+        <option value="">Elige…</option>
+        {% for h in horas %}
+          <option value="{{ h|time:'H:i' }}" {% if datos_bloqueo.hora == h|time:'H:i' %}selected{% endif %}>{{ h|ampm }} – {{ h|hora_fin|ampm }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="col-md-8">
+      <label class="form-label fw-medium" for="b-motivo">Motivo</label>
+      <input type="text" class="form-control" id="b-motivo" name="motivo" maxlength="200"
+             placeholder="Mantenimiento" value="{{ datos_bloqueo.motivo|default:'' }}">
+    </div>
+    <div class="col-md-4">
+      <button type="submit" class="btn btn-verde w-100">Bloquear franja</button>
+    </div>
+  </form>
+
+  <h3 class="h6 mt-4 mb-2">Próximos bloqueos</h3>
+  {% if proximos_bloqueos %}
+    <div class="table-responsive">
+      <table class="table tabla-panel align-middle mb-0">
+        <thead><tr><th>Fecha</th><th>Franja</th><th>Espacio</th><th>Motivo</th><th class="text-end">Acción</th></tr></thead>
+        <tbody>
+          {% for b in proximos_bloqueos %}
+            <tr>
+              <td class="text-nowrap">{{ b.fecha|date:"d/m/Y" }}</td>
+              <td class="text-nowrap">{{ b.hora_inicio|ampm }} – {{ b.hora_inicio|hora_fin|ampm }}</td>
+              <td>{{ b.espacio.nombre }}</td>
+              <td>{{ b.motivo }}</td>
+              <td class="text-end">
+                <form method="post" action="{% url 'panel:quitar_bloqueo' b.pk %}">
+                  {% csrf_token %}
+                  <button type="submit" class="btn btn-sm btn-outline-secondary">Quitar</button>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="small text-body-secondary mb-0">No hay bloqueos programados.</p>
+  {% endif %}
+</section>
+{% endblock %}

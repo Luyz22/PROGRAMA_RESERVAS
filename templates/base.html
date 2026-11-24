@@ -24,7 +24,7 @@
           <ul class="navbar-nav me-auto gap-1">
             <li class="nav-item"><a class="nav-link {% block menu_espacios %}{% endblock %}" href="{% url 'espacios:lista' %}">Espacios</a></li>
             {% if user.is_staff %}
-              <li class="nav-item"><a class="nav-link {% block menu_panel %}{% endblock %}" href="{% url 'reservas:panel' %}">Panel</a></li>
+              <li class="nav-item"><a class="nav-link {% block menu_panel %}{% endblock %}" href="{% url 'panel:inicio' %}">Panel</a></li>
             {% endif %}
           </ul>
           <div class="d-flex align-items-center gap-3">

@@ -1,0 +1,47 @@
+{% extends "panel/base_panel.html" %}
+{% load horas %}
+
+{% block titulo %}{% if usuario_editado %}Editar usuario{% else %}Nuevo usuario{% endif %} · Panel{% endblock %}
+
+{% block panel %}
+<a href="{% url 'panel:usuarios' %}" class="small fw-semibold text-decoration-none"><i class="bi bi-chevron-left"></i> Usuarios</a>
+<h1 class="h2 mt-2 mb-4">
+  {% if usuario_editado %}{{ usuario_editado.get_full_name|default:usuario_editado.username }}{% else %}Nuevo usuario{% endif %}
+</h1>
+
+<form method="post" class="tarjeta p-3 p-md-4 mb-4" novalidate>
+  {% csrf_token %}
+  {% if form.non_field_errors %}<div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>{% endif %}
+  <div class="row g-3">
+    <div class="col-md-6">{% include "panel/_campo.html" with campo=form.nombre %}</div>
+    <div class="col-md-6">{% include "panel/_campo.html" with campo=form.apellido %}</div>
+    <div class="col-md-8">{% include "panel/_campo.html" with campo=form.correo %}</div>
+    <div class="col-md-4">{% include "panel/_campo.html" with campo=form.rol %}</div>
+    <div class="col-md-6">{% include "panel/_campo.html" with campo=form.password %}</div>
+    <div class="col-md-6 d-flex align-items-end">{% include "panel/_campo.html" with campo=form.activo %}</div>
+  </div>
+  <p class="small text-body-secondary mt-3 mb-0"><i class="bi bi-info-circle me-1"></i>Un administrador puede entrar al panel, bloquear franjas y cancelar reservas de cualquiera.</p>
+  <div class="d-flex gap-2 mt-4">
+    <button type="submit" class="btn btn-verde">{% if usuario_editado %}Guardar cambios{% else %}Crear usuario{% endif %}</button>
+    <a href="{% url 'panel:usuarios' %}" class="btn btn-outline-secondary">Volver</a>
+  </div>
+</form>
+
+{% if usuario_editado %}
+  <section class="tarjeta p-3 p-md-4">
+    <h2 class="h5 mb-3">Últimas reservas</h2>
+    {% if reservas_usuario %}
+      <ul class="list-unstyled mb-0 small">
+        {% for r in reservas_usuario %}
+          <li class="d-flex justify-content-between py-2 {% if not forloop.last %}border-bottom{% endif %}">
+            <span>{{ r.espacio.nombre }} · {{ r.fecha|date:"d/m/Y" }} · {{ r.hora_inicio|ampm }}</span>
+            <span class="etiqueta etiqueta-{{ r.estado }}">{{ r.get_estado_display }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="small text-body-secondary mb-0">No tiene reservas.</p>
+    {% endif %}
+  </section>
+{% endif %}
+{% endblock %}

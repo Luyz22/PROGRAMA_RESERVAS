@@ -108,16 +108,16 @@ class PanelTests(TestCase):
 
     def test_solo_admin_entra_al_panel(self):
         self.client.force_login(self.usuario)
-        r = self.client.get(reverse("reservas:panel"))
+        r = self.client.get(reverse("panel:inicio"))
         self.assertRedirects(r, reverse("espacios:lista"))
 
         self.client.force_login(self.admin)
-        r = self.client.get(reverse("reservas:panel"))
+        r = self.client.get(reverse("panel:inicio"))
         self.assertContains(r, "Panel de administración")
 
     def test_bloquear_y_quitar_desde_el_panel(self):
         self.client.force_login(self.admin)
-        r = self.client.post(reverse("reservas:bloquear"), {
+        r = self.client.post(reverse("panel:bloquear"), {
             "espacio": self.espacio.pk, "fecha": self.manana.isoformat(),
             "hora": "15:00", "motivo": "Arreglo de la malla",
         }, follow=True)
@@ -126,18 +126,18 @@ class PanelTests(TestCase):
         estados = {f["inicio"]: f["estado"] for f in franjas_del_dia(self.espacio, self.manana)}
         self.assertEqual(estados[time(15, 0)], "mantenimiento")
 
-        r = self.client.post(reverse("reservas:quitar_bloqueo", args=[b.pk]), follow=True)
+        r = self.client.post(reverse("panel:quitar_bloqueo", args=[b.pk]), follow=True)
         self.assertContains(r, "La franja quedó libre")
         self.assertFalse(Bloqueo.objects.exists())
 
     def test_bloqueo_con_datos_incompletos(self):
         self.client.force_login(self.admin)
-        r = self.client.post(reverse("reservas:bloquear"), {"espacio": self.espacio.pk}, follow=True)
+        r = self.client.post(reverse("panel:bloquear"), {"espacio": self.espacio.pk}, follow=True)
         self.assertContains(r, "Completa el espacio, la fecha y la franja.")
 
     def test_usuario_normal_no_puede_bloquear(self):
         self.client.force_login(self.usuario)
-        self.client.post(reverse("reservas:bloquear"), {
+        self.client.post(reverse("panel:bloquear"), {
             "espacio": self.espacio.pk, "fecha": self.manana.isoformat(), "hora": "15:00",
         })
         self.assertFalse(Bloqueo.objects.exists())
@@ -145,7 +145,7 @@ class PanelTests(TestCase):
     def test_admin_cancela_reserva_ajena(self):
         r = crear_reserva(self.usuario, self.espacio, self.manana, time(9, 0))
         self.client.force_login(self.admin)
-        self.client.post(reverse("reservas:cancelar", args=[r.pk]), {"volver": reverse("reservas:panel")})
+        self.client.post(reverse("reservas:cancelar", args=[r.pk]), {"volver": reverse("panel:inicio")})
         r.refresh_from_db()
         self.assertEqual(r.estado, Reserva.Estado.CANCELADA)
 

@@ -1,0 +1,38 @@
+{% extends "panel/base_panel.html" %}
+
+{% block titulo %}Espacios · Panel{% endblock %}
+
+{% block panel %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4">
+  <div>
+    <h1 class="h2 mb-0">Espacios</h1>
+    <p class="text-body-secondary mb-0">Canchas, gimnasio y otros espacios que se pueden reservar.</p>
+  </div>
+  <a href="{% url 'panel:espacio_nuevo' %}" class="btn btn-verde"><i class="bi bi-plus-lg me-1"></i>Nuevo espacio</a>
+</div>
+
+<div class="tarjeta p-3 p-md-4">
+  {% if espacios %}
+    <div class="table-responsive">
+      <table class="table tabla-panel align-middle mb-0">
+        <thead><tr><th>Nombre</th><th>Tipo</th><th>Estado</th><th class="text-end">Acción</th></tr></thead>
+        <tbody>
+          {% for e in espacios %}
+            <tr>
+              <td class="fw-semibold">{{ e.nombre }}{% if e.descripcion %}<div class="small text-body-secondary fw-normal">{{ e.descripcion|truncatechars:70 }}</div>{% endif %}</td>
+              <td>{{ e.get_tipo_display }}</td>
+              <td>
+                {% if e.activo %}<span class="etiqueta etiqueta-confirmada">Disponible</span>
+                {% else %}<span class="etiqueta etiqueta-cancelada">Desactivado</span>{% endif %}
+              </td>
+              <td class="text-end"><a href="{% url 'panel:espacio_editar' e.pk %}" class="btn btn-sm btn-borde-verde">Editar</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-body-secondary mb-0">Todavía no hay espacios.</p>
+  {% endif %}
+</div>
+{% endblock %}
