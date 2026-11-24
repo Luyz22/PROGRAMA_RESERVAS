@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load horas %}
+
+{% block titulo %}{{ espacio.nombre }}{% endblock %}
+{% block menu_espacios %}active{% endblock %}
+
+{% block contenido %}
+<a href="{% url 'espacios:lista' %}" class="small fw-semibold text-decoration-none"><i class="bi bi-chevron-left"></i> Espacios</a>
+<h1 class="h2 mt-2 mb-4">{{ espacio.nombre }}</h1>
+
+<form method="post" action="{% url 'reservas:reservar' espacio.pk %}">
+  {% csrf_token %}
+  <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
+
+  <div class="row g-3">
+    <div class="col-lg-8">
+      <div class="tarjeta p-3 p-md-4">
+        <h2 class="h6 mb-3">Elige el día</h2>
+        <div class="d-flex flex-wrap gap-2 mb-4">
+          {% for dia in dias %}
+            <a href="?fecha={{ dia|date:'Y-m-d' }}" class="dia {% if dia == fecha %}activo{% endif %}"
+               {% if dia == fecha %}aria-current="date"{% endif %}>
+              <small class="text-capitalize">{{ dia|date:"D" }}</small>
+              <strong>{{ dia|date:"j" }}</strong>
+            </a>
+          {% endfor %}
+        </div>
+
+        <h2 class="h6 mb-2">Elige la franja · <span class="text-capitalize">{{ fecha|date:"l" }}</span> {{ fecha|date:"j \d\e F"|lower }}</h2>
+        <div class="leyenda d-flex flex-wrap gap-3 mb-3">
+          <span><i style="background:#fff"></i>Libre</span>
+          <span><i style="background:var(--gris)"></i>Ocupada</span>
+          <span><i style="background:var(--ambar)"></i>Mantenimiento</span>
+          <span><i style="background:var(--verde)"></i>Tu selección</span>
+          <span><i style="background:var(--verde-claro)"></i>Tu reserva</span>
+        </div>
+
+        <div class="franjas">
+          {% for f in franjas %}
+            {% if f.estado == "libre" %}
+              <input type="radio" class="btn-check" name="hora" value="{{ f.inicio|time:'H:i' }}"
+                     id="h{{ forloop.counter }}" autocomplete="off"
+                     data-texto="{{ f.inicio|ampm }} – {{ f.fin|ampm }}">
+              <label class="franja franja-libre" for="h{{ forloop.counter }}">
+                {{ f.inicio|ampm }} – {{ f.fin|ampm }}
+                <small class="estado-libre">Libre</small>
+              </label>
+            {% else %}
+              <div class="franja franja-{{ f.estado }}" aria-disabled="true">
+                {{ f.inicio|ampm }} – {{ f.fin|ampm }}
+                <small>{% if f.estado == "tuya" %}Tu reserva{% elif f.estado == "ocupada" %}Ocupada{% elif f.estado == "mantenimiento" %}Mantenimiento{% else %}Ya pasó{% endif %}</small>
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-4">
+      <div class="tarjeta p-3 p-md-4 position-sticky" style="top: 1rem">
+        <h2 class="h6 mb-3">Tu reserva</h2>
+        <dl class="resumen small mb-3">
+          <div class="d-flex justify-content-between mb-2"><dt>Espacio</dt><dd>{{ espacio.nombre }}</dd></div>
+          <div class="d-flex justify-content-between mb-2"><dt>Fecha</dt><dd><span class="text-capitalize">{{ fecha|date:"D" }}</span> {{ fecha|date:"j M" }}</dd></div>
+          <div class="d-flex justify-content-between"><dt>Franja</dt><dd id="franja-elegida">—</dd></div>
+        </dl>
+        <hr>
+        {% if hay_libres %}
+          <p class="small text-body-secondary">Elige una franja libre y confirma. Recibirás la confirmación al instante.</p>
+          <button type="submit" class="btn btn-verde w-100 py-2" id="confirmar" disabled>Confirmar reserva</button>
+        {% else %}
+          <p class="small text-body-secondary mb-0">No quedan franjas libres este día. Prueba con otro.</p>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Al elegir una franja: muestra la franja en el resumen y activa el botón.
+  document.querySelectorAll('input[name="hora"]').forEach(function (opcion) {
+    opcion.addEventListener('change', function () {
+      document.getElementById('franja-elegida').textContent = opcion.dataset.texto;
+      document.getElementById('confirmar').disabled = false;
+      document.querySelectorAll('.estado-libre').forEach(function (e) { e.textContent = 'Libre'; });
+      opcion.nextElementSibling.querySelector('.estado-libre').textContent = 'Tu selección';
+    });
+  });
+</script>
+{% endblock %}

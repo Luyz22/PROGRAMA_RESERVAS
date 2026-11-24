@@ -1,0 +1,113 @@
+/* Colores y estilos del mockup "Reservas deportivas UNIMINUTO". */
+
+:root {
+  --verde: #0e776d;          /* color principal (botones, selección) */
+  --verde-oscuro: #0a5d55;
+  --verde-claro: #e3f0ee;    /* fondos suaves (menú activo, íconos) */
+  --oscuro: #142020;         /* panel del inicio de sesión */
+  --fondo: #f6f6f4;
+  --borde: #dedfdc;
+  --gris: #e6e8e6;
+  --ambar: #fbedc4;
+  --ambar-texto: #7a5a0a;
+
+  --bs-body-font-family: "Inter", system-ui, sans-serif;
+  --bs-body-bg: var(--fondo);
+  --bs-body-color: #1d2323;
+  --bs-link-color: var(--verde);
+  --bs-link-color-rgb: 14, 119, 109;
+  --bs-link-hover-color: var(--verde-oscuro);
+  --bs-link-hover-color-rgb: 10, 93, 85;
+  --bs-border-color: var(--borde);
+  --bs-border-radius: .6rem;
+  --bs-focus-ring-color: rgba(14, 119, 109, .25);
+}
+
+h1, h2, h3, .titulo { font-family: "Space Grotesk", "Inter", sans-serif; font-weight: 600; letter-spacing: -.01em; }
+
+.form-control, .form-select { background-color: #fff; }
+.form-control:focus,.form-select:focus, .form-check-input:focus {
+  border-color: var(--verde); box-shadow: 0 0 0 .2rem rgba(14, 119, 109, .2);
+}
+.form-check-input:checked { background-color: var(--verde); border-color: var(--verde); }
+
+/* Botones */
+.btn-verde {
+  --bs-btn-bg: var(--verde); --bs-btn-border-color: var(--verde); --bs-btn-color: #fff;
+  --bs-btn-hover-bg: var(--verde-oscuro); --bs-btn-hover-border-color: var(--verde-oscuro); --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: var(--verde-oscuro); --bs-btn-active-border-color: var(--verde-oscuro); --bs-btn-active-color: #fff;
+  --bs-btn-disabled-bg: var(--verde); --bs-btn-disabled-border-color: var(--verde); --bs-btn-disabled-color: #fff;
+  font-weight: 600;
+}
+.btn-borde-verde {
+  --bs-btn-color: var(--verde); --bs-btn-border-color: var(--verde); --bs-btn-bg: #fff;
+  --bs-btn-hover-bg: var(--verde); --bs-btn-hover-border-color: var(--verde); --bs-btn-hover-color: #fff;
+  --bs-btn-active-bg: var(--verde-oscuro); --bs-btn-active-color: #fff;
+  font-weight: 600;
+}
+
+/* Barra superior */
+.barra { background: #fff; border-bottom: 1px solid var(--borde); }
+.barra .navbar-brand { font-family: "Space Grotesk", sans-serif; font-weight: 600; }
+.barra .nav-link { border-radius: .5rem; padding: .35rem .8rem !important; color: #1d2323; font-weight: 500; }
+.barra .nav-link.active { background: var(--verde-claro); color: var(--verde); }
+
+/* Tarjetas */
+.tarjeta { background: #fff; border: 1px solid var(--borde); border-radius: .9rem; }
+.icono-espacio {
+  width: 3rem; height: 3rem; border-radius: .7rem; display: grid; place-items: center;
+  background: var(--verde-claro); color: var(--verde); font-size: 1.4rem;
+}
+
+/* Filtros tipo píldora */
+.pildora { border-radius: 2rem; border: 1px solid var(--borde); background: #fff; color: #1d2323; padding: .35rem 1rem; font-size: .9rem; text-decoration: none; }
+.pildora:hover { border-color: var(--verde); color: var(--verde); }
+.pildora.activa { background: var(--verde); border-color: var(--verde); color: #fff; }
+
+/* Pasos numerados */
+.paso-numero {
+  width: 1.8rem; height: 1.8rem; border-radius: 50%; display: inline-grid; place-items: center;
+  background: var(--verde); color: #fff; font-weight: 600; font-size: .85rem; flex-shrink: 0;
+}
+
+/* Inicio de sesión: panel oscuro a la izquierda */
+.panel-oscuro { background: var(--oscuro); color: #fff; }
+.panel-oscuro .logo { width: 2.6rem; height: 2.6rem; border-radius: .6rem; background: var(--verde); display: grid; place-items: center; font-size: 1.3rem; }
+.panel-oscuro .text-suave { color: #b8c2c1; }
+.panel-oscuro .bi-check2 { color: #4fc3a1; }
+
+/* Selector de día */
+.dia {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-width: 3.6rem; padding: .4rem .5rem; border: 1px solid var(--borde); border-radius: .6rem;
+  background: #fff; color: #1d2323; text-decoration: none; line-height: 1.2;
+}
+.dia small { font-size: .75rem; color: #6b7372; }
+.dia strong { font-size: 1.05rem; }
+.dia:hover { border-color: var(--verde); }
+.dia.activo { background: var(--verde); border-color: var(--verde); color: #fff; }
+.dia.activo small { color: #d6ece9; }
+
+/* Franjas */
+.franjas { display: grid; grid-template-columns: repeat(auto-fill, minmax(10.5rem, 1fr)); gap: .6rem; }
+.franja {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  padding: .55rem .5rem; border: 1px solid var(--borde); border-radius: .6rem;
+  background: #fff; font-weight: 600; font-size: .9rem; line-height: 1.3; text-align: center; margin: 0;
+}
+.franja small { font-weight: 400; font-size: .75rem; }
+.franja-libre { cursor: pointer; }
+.franja-libre:hover { border-color: var(--verde); }
+.btn-check:checked + .franja-libre { background: var(--verde); border-color: var(--verde); color: #fff; }
+.btn-check:focus-visible + .franja-libre { box-shadow: 0 0 0 .2rem rgba(14, 119, 109, .3); }
+.franja-ocupada { background: var(--gris); color: #6b7372; }
+.franja-mantenimiento { background: var(--ambar); border-color: #f0d68a; color: var(--ambar-texto); }
+.franja-tuya { background: var(--verde-claro); border-color: #a9d3cd; color: var(--verde); }
+.franja-pasada { color: #a3aaa9; background: transparent; }
+
+.leyenda { font-size: .8rem; color: #6b7372; }
+.leyenda i { display: inline-block; width: .8rem; height: .8rem; border-radius: .2rem; vertical-align: -.05rem; margin-right: .25rem; border: 1px solid var(--borde); }
+
+/* Resumen "Tu reserva" */
+.resumen dt { font-weight: 400; color: #6b7372; }
+.resumen dd { font-weight: 600; text-align: end; margin: 0; }

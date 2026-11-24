@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block titulo %}Iniciar sesión{% endblock %}
+
+{% block cuerpo %}
+<div class="container-fluid">
+  <div class="row min-vh-100">
+    <section class="col-lg-6 panel-oscuro d-flex align-items-center px-4 px-md-5 py-5">
+      <div style="max-width: 30rem">
+        <div class="d-flex align-items-center gap-3 mb-4">
+          <span class="logo"><i class="bi bi-dribbble"></i></span>
+          <span class="fs-5 fw-semibold titulo">Reservas deportivas</span>
+        </div>
+        <h1 class="display-6 mb-3">Reserva tu espacio deportivo</h1>
+        <p class="text-suave mb-4">Consulta la disponibilidad de UNIMINUTO y asegura tu franja en pocos pasos.</p>
+        <ul class="list-unstyled mb-0 d-none d-lg-block">
+          <li class="mb-2"><i class="bi bi-check2 me-2"></i>Consulta franjas libres por espacio y por día</li>
+          <li class="mb-2"><i class="bi bi-check2 me-2"></i>Reserva en un solo paso, sin filas</li>
+          <li><i class="bi bi-check2 me-2"></i>Recibe la confirmación de tu reserva por correo</li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="col-lg-6 d-flex align-items-center justify-content-center px-3 py-5">
+      <div class="tarjeta p-4 p-md-5 w-100" style="max-width: 28rem">
+        <h2 class="h4 mb-1">Iniciar sesión</h2>
+        <p class="text-body-secondary mb-4">Accede para reservar un espacio</p>
+
+        {% include "mensajes.html" %}
+
+        <form method="post" novalidate>
+          {% csrf_token %}
+          {% if form.non_field_errors %}
+            <div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>
+          {% endif %}
+
+          <div class="mb-3">
+            <label class="form-label fw-medium" for="{{ form.username.id_for_label }}">{{ form.username.label }}</label>
+            {{ form.username }}
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-medium" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
+            {{ form.password }}
+          </div>
+          <div class="form-check mb-4">
+            {{ form.acepta_politica }}
+            <label class="form-check-label small" for="{{ form.acepta_politica.id_for_label }}">
+              Acepto la <a href="#" data-bs-toggle="modal" data-bs-target="#politicaDatos">política de tratamiento de datos personales</a> (Ley 1581 de 2012).
+            </label>
+            {% for error in form.acepta_politica.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+          </div>
+          <input type="hidden" name="next" value="{{ next }}">
+          <button type="submit" class="btn btn-verde w-100 py-2">Ingresar</button>
+        </form>
+
+        <p class="text-center small mt-4 mb-0">¿Eres usuario externo? <a href="{% url 'usuarios:registro' %}" class="fw-semibold">Crear cuenta</a></p>
+      </div>
+    </section>
+  </div>
+</div>
+
+{% include "politica_datos.html" %}
+{% endblock %}

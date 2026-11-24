@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+
+{% block titulo %}Crear cuenta{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-9 col-lg-7">
+    <div class="tarjeta p-4 p-md-5">
+      <h1 class="h4 mb-1">Crear cuenta de usuario externo</h1>
+      <p class="text-body-secondary mb-4">Si eres estudiante o docente, ingresa con la cuenta que te asignó la universidad.</p>
+
+      <form method="post" novalidate>
+        {% csrf_token %}
+        <div class="row g-3">
+          {% for campo in form %}
+            {% if campo.name != "acepta_politica" %}
+              <div class="{% if campo.name == 'correo' %}col-12{% else %}col-sm-6{% endif %}">
+                <label class="form-label fw-medium" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
+                {{ campo }}
+                {% for error in campo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+                {% if campo.name == "password1" %}
+                  <div class="form-text">Mínimo 8 caracteres, que no sea solo números ni muy común.</div>
+                {% endif %}
+              </div>
+            {% endif %}
+          {% endfor %}
+
+          <div class="col-12">
+            <div class="form-check">
+              {{ form.acepta_politica }}
+              <label class="form-check-label small" for="{{ form.acepta_politica.id_for_label }}">
+                Acepto la <a href="#" data-bs-toggle="modal" data-bs-target="#politicaDatos">política de tratamiento de datos personales</a> (Ley 1581 de 2012).
+              </label>
+              {% for error in form.acepta_politica.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
+            </div>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-verde w-100 py-2 mt-4">Crear cuenta</button>
+      </form>
+
+      <p class="text-center small mt-4 mb-0">¿Ya tienes cuenta? <a href="{% url 'usuarios:ingresar' %}" class="fw-semibold">Inicia sesión</a></p>
+    </div>
+  </div>
+</div>
+
+{% include "politica_datos.html" %}
+{% endblock %}

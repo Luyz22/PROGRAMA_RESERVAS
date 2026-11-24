@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block titulo %}Espacios deportivos{% endblock %}
+{% block menu_espacios %}active{% endblock %}
+
+{% block contenido %}
+<h1 class="h2 mb-1">Espacios deportivos</h1>
+<p class="text-body-secondary">Elige un espacio para ver sus franjas disponibles</p>
+
+<div class="d-flex flex-wrap gap-2 mb-4" role="group" aria-label="Filtrar por tipo">
+  {% for valor, texto in filtros %}
+    <a href="{% url 'espacios:lista' %}{% if valor %}?tipo={{ valor }}{% endif %}"
+       class="pildora {% if valor == tipo_actual %}activa{% endif %}"
+       {% if valor == tipo_actual %}aria-current="true"{% endif %}>{{ texto }}</a>
+  {% endfor %}
+</div>
+
+<div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 g-3 mb-4">
+  {% for espacio in espacios %}
+    <div class="col">
+      <div class="tarjeta h-100 p-3 d-flex flex-column">
+        <span class="icono-espacio mb-3">
+          {% if espacio.nombre == "Cancha de fútbol" %}<i class="bi bi-dribbble"></i>
+          {% elif espacio.tipo == "cancha" %}<i class="bi bi-bounding-box"></i>
+          {% elif espacio.tipo == "gimnasio" %}<i class="bi bi-heart-pulse"></i>
+          {% else %}<i class="bi bi-grid"></i>{% endif %}
+        </span>
+        <h2 class="h5 mb-0">{{ espacio.nombre }}</h2>
+        <p class="small text-body-secondary mb-3">{{ espacio.get_tipo_display }}</p>
+        {% if espacio.descripcion %}<p class="small text-body-secondary">{{ espacio.descripcion }}</p>{% endif %}
+        <a href="{% url 'reservas:franjas' espacio.pk %}" class="btn btn-borde-verde mt-auto">Ver franjas</a>
+      </div>
+    </div>
+  {% empty %}
+    <div class="col-12">
+      <div class="tarjeta p-3 text-body-secondary">No hay espacios disponibles con este filtro.</div>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="tarjeta p-3 p-md-4">
+  <h2 class="h6 mb-3">Reservar toma tres pasos</h2>
+  <div class="row g-3 small">
+    <div class="col-md-4 d-flex align-items-center gap-2"><span class="paso-numero">1</span>Elige el espacio y el día</div>
+    <div class="col-md-4 d-flex align-items-center gap-2"><span class="paso-numero">2</span>Selecciona una franja libre</div>
+    <div class="col-md-4 d-flex align-items-center gap-2"><span class="paso-numero">3</span>Confirma tu reserva</div>
+  </div>
+</div>
+{% endblock %}
