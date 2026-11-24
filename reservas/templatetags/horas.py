@@ -1,6 +1,16 @@
+from datetime import time
+
 from django import template
 
 register = template.Library()
+
+
+@register.filter
+def hora_fin(hora):
+    """La hora en que termina una franja de 1 hora: 5:00 pm -> 6:00 pm."""
+    if hora is None:
+        return None
+    return time((hora.hour + 1) % 24, hora.minute)
 
 
 @register.filter

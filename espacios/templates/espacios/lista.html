@@ -1,9 +1,35 @@
 {% extends "base.html" %}
+{% load horas %}
 
 {% block titulo %}Espacios deportivos{% endblock %}
 {% block menu_espacios %}active{% endblock %}
 
 {% block contenido %}
+{% if proxima %}
+  <div class="tarjeta proxima p-3 p-md-4 mb-4 d-flex flex-column flex-md-row align-items-md-center gap-3">
+    <span class="icono-espacio"><i class="bi bi-calendar-check"></i></span>
+    <div class="flex-grow-1">
+      <div class="small text-body-secondary">Tu próxima reserva</div>
+      <div class="fs-5 fw-semibold titulo">{{ proxima.espacio.nombre }}</div>
+      <div>
+        <span class="text-capitalize">
+          {% if proxima.fecha == hoy %}Hoy{% else %}{{ proxima.fecha|date:"l" }}{% endif %}</span>
+        {{ proxima.fecha|date:"j \d\e F"|lower }} ·
+        <strong>{{ proxima.hora_inicio|ampm }} – {{ proxima.hora_inicio|hora_fin|ampm }}</strong>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="{% url 'reservas:franjas' proxima.espacio.pk %}?fecha={{ proxima.fecha|date:'Y-m-d' }}" class="btn btn-borde-verde">Ver día</a>
+      <form method="post" action="{% url 'reservas:cancelar' proxima.pk %}"
+            onsubmit="return confirm('¿Seguro que quieres cancelar esta reserva?');">
+        {% csrf_token %}
+        <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+        <button type="submit" class="btn btn-outline-danger">Cancelar</button>
+      </form>
+    </div>
+  </div>
+{% endif %}
+
 <h1 class="h2 mb-1">Espacios deportivos</h1>
 <p class="text-body-secondary">Elige un espacio para ver sus franjas disponibles</p>
 

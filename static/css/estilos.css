@@ -59,6 +59,20 @@ h1, h2, h3, .titulo { font-family: "Space Grotesk", "Inter", sans-serif; font-we
   background: var(--verde-claro); color: var(--verde); font-size: 1.4rem;
 }
 
+/* Tarjeta "Tu próxima reserva" */
+.proxima { border-left: 4px solid var(--verde); }
+
+/* Panel de administración */
+.menu-panel .list-group-item { border: 0; border-radius: .5rem !important; color: #1d2323; padding: .5rem .8rem; }
+.menu-panel .list-group-item.active { background: var(--verde-claro); color: var(--verde); font-weight: 600; }
+.menu-panel .list-group-item:hover:not(.active) { background: #f0f1ef; }
+.contador .numero { font-family: "Space Grotesk", sans-serif; font-size: 2rem; font-weight: 600; line-height: 1; }
+.etiqueta { display: inline-block; padding: .15rem .55rem; border-radius: 1rem; font-size: .75rem; font-weight: 600; }
+.etiqueta-confirmada { background: var(--verde-claro); color: var(--verde); }
+.etiqueta-cancelada { background: var(--gris); color: #6b7372; }
+.tabla-panel th { font-weight: 500; color: #6b7372; font-size: .8rem; }
+.tabla-panel td, .tabla-panel th { background: transparent; }
+
 /* Filtros tipo píldora */
 .pildora { border-radius: 2rem; border: 1px solid var(--borde); background: #fff; color: #1d2323; padding: .35rem 1rem; font-size: .9rem; text-decoration: none; }
 .pildora:hover { border-color: var(--verde); color: var(--verde); }

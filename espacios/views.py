@@ -1,5 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
+from django.utils import timezone
+
+from reservas.servicios import proxima_reserva
 
 from .models import Espacio
 
@@ -24,5 +27,11 @@ def lista(request):
     return render(
         request,
         "espacios/lista.html",
-        {"espacios": espacios, "filtros": FILTROS, "tipo_actual": tipo},
+        {
+            "espacios": espacios,
+            "filtros": FILTROS,
+            "tipo_actual": tipo,
+            "proxima": proxima_reserva(request.user),
+            "hoy": timezone.localdate(),
+        },
     )

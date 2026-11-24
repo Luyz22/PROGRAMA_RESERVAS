@@ -5,6 +5,7 @@ from django.utils import timezone
 from django.core.exceptions import ValidationError
 
 from django.db import IntegrityError, transaction
+from django.db.models import Q
 
 from .models import Bloqueo, Reserva
 
@@ -105,3 +106,59 @@ def cancelar_reserva(reserva, usuario):
     reserva.estado = Reserva.Estado.CANCELADA
     reserva.save(update_fields=["estado"])
     return reserva
+
+def proxima_reserva(usuario):
+    """La reserva confirmada más cercana del usuario que aún no ha terminado.
+
+    Incluye la que está en curso: si son las 5:20 pm, la de 5:00 pm cuenta.
+    """
+    ahora = timezone.localtime()
+    hora_actual = time(ahora.hour, 0)
+    return (
+        Reserva.objects.filter(usuario=usuario, estado=Reserva.Estado.CONFIRMADA)
+        .filter(
+            Q(fecha__gt=ahora.date())
+            | Q(fecha=ahora.date(), hora_inicio__gte=hora_actual)
+        )
+        .select_related("espacio")
+        .order_by("fecha", "hora_inicio")
+        .first()
+    )
+
+
+def horas_del_dia():
+    """Las horas de inicio de todas las franjas: 6:00, 7:00, ..., 21:00."""
+    return [time(hora, 0) for hora in range(HORA_APERTURA, HORA_CIERRE)]
+
+
+def crear_bloqueo(espacio, fecha, hora_inicio, motivo, usuario):
+    """Bloquea una franja (por ejemplo, por mantenimiento).
+
+    No deja bloquear una franja que ya tiene una reserva confirmada:
+    primero hay que cancelar esa reserva, para que la persona no se
+    quede con una reserva en un espacio cerrado sin saberlo.
+    """
+    if hora_inicio not in horas_del_dia():
+        raise ValidationError("Esa franja no existe.")
+
+    ahora = timezone.localtime()
+    if (fecha, hora_inicio) <= (ahora.date(), ahora.time()):
+        raise ValidationError("No puedes bloquear una franja que ya pasó o ya empezó.")
+
+    reserva = Reserva.objects.filter(
+        espacio=espacio, fecha=fecha, hora_inicio=hora_inicio,
+        estado=Reserva.Estado.CONFIRMADA,
+    ).select_related("usuario").first()
+    if reserva:
+        nombre = reserva.usuario.get_full_name() or reserva.usuario.username
+        raise ValidationError(
+            f"Esa franja tiene una reserva confirmada de {nombre}. Cancélala primero."
+        )
+
+    if Bloqueo.objects.filter(espacio=espacio, fecha=fecha, hora_inicio=hora_inicio).exists():
+        raise ValidationError("Esa franja ya está bloqueada.")
+
+    return Bloqueo.objects.create(
+        espacio=espacio, fecha=fecha, hora_inicio=hora_inicio,
+        motivo=motivo or "Mantenimiento", creado_por=usuario,
+    )
