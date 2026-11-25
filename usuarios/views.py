@@ -28,11 +28,16 @@ def registro(request):
     form = RegistroForm(request.POST or None)
     if request.method == "POST" and form.is_valid():
         usuario = registrar_usuario(form.cleaned_data)
+        if not settings.VERIFICACION_CORREO_ACTIVA:
+            messages.success(request, f"¡Listo, {usuario.first_name}! Tu cuenta quedó creada. Ya puedes iniciar sesión.")
+            return redirect("usuarios:ingresar")
         enviar_verificacion(request, usuario)
         request.session["correo_registrado"] = usuario.email
         return redirect("usuarios:registro_enviado")
 
-    return render(request, "usuarios/registro.html", {"form": form})
+    return render(request, "usuarios/registro.html", {
+        "form": form, "verificacion_activa": settings.VERIFICACION_CORREO_ACTIVA,
+    })
 
 
 def registro_enviado(request):

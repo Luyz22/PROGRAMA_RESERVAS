@@ -133,6 +133,10 @@ LOGOUT_REDIRECT_URL = 'usuarios:ingresar'
 # Cuentas
 # Solo se pueden registrar correos de este dominio (estudiantes y docentes).
 DOMINIO_INSTITUCIONAL = 'uniminuto.edu.co'
+# Verificación por correo al crear la cuenta.
+# False (por ahora): la cuenta queda activa de inmediato, sin enlace de verificación.
+# True: la cuenta nace inactiva y se activa con el enlace que llega al correo.
+VERIFICACION_CORREO_ACTIVA = False
 # Horas que dura el enlace de verificación que se envía al crear la cuenta.
 VERIFICACION_CORREO_HORAS = 48
 

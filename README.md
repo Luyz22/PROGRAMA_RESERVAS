@@ -56,6 +56,12 @@ python manage.py test
 | `panel/` | Panel del administrador (`/panel/`). |
 | `templates/`, `static/` | Plantillas y estilos comunes. |
 
+## Verificación de cuentas
+
+Por ahora está **apagada**: al crear la cuenta queda activa de inmediato. Para encenderla, en
+`config/settings.py` pon `VERIFICACION_CORREO_ACTIVA = True`. Con ella encendida, la cuenta se activa
+con el enlace que se imprime en la terminal (busca la línea que empieza con `>>> Enlace de activación`).
+
 ## Correo
 
 En desarrollo los correos no se envían: se imprimen en la terminal donde corre `runserver`.

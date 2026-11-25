@@ -7,7 +7,7 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.core import mail
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
 
@@ -44,6 +44,7 @@ def enlace_del_correo(correo):
     return texto[inicio:texto.index("\n", inicio)].strip()
 
 
+@override_settings(VERIFICACION_CORREO_ACTIVA=True)
 class RegistroTests(TestCase):
     def test_registro_crea_cuenta_inactiva_y_envia_correo(self):
         r = self.client.post(reverse("usuarios:registro"), datos_registro())
@@ -121,6 +122,7 @@ class RegistroTests(TestCase):
         self.assertEqual(Perfil._meta.get_field("tipo").default, Perfil.Tipo.ESTUDIANTE)
 
 
+@override_settings(VERIFICACION_CORREO_ACTIVA=True)
 class VerificacionTests(TestCase):
     def registrar(self):
         self.client.post(reverse("usuarios:registro"), datos_registro())
@@ -182,6 +184,37 @@ class VerificacionTests(TestCase):
         r = self.client.post(reverse("usuarios:reenviar"), {"correo": "nadie@uniminuto.edu.co"}, follow=True)
         self.assertContains(r, "te enviamos un enlace nuevo")
         self.assertEqual(len(mail.outbox), 2)
+
+
+@override_settings(VERIFICACION_CORREO_ACTIVA=False)
+class SinVerificacionTests(TestCase):
+    """Con la verificación apagada la cuenta queda activa de inmediato."""
+
+    def test_cuenta_activa_sin_correo(self):
+        r = self.client.post(reverse("usuarios:registro"), datos_registro(), follow=True)
+        self.assertRedirects(r, reverse("usuarios:ingresar"))
+        self.assertContains(r, "Tu cuenta quedó creada")
+        u = User.objects.get()
+        self.assertTrue(u.is_active)
+        self.assertEqual(len(mail.outbox), 0)
+        self.assertNotIn("_auth_user_id", self.client.session)   # no inicia sesión sola
+
+        r = self.client.post(reverse("usuarios:ingresar"),
+                             {"username": "ana.perez@uniminuto.edu.co", "password": CLAVE})
+        self.assertRedirects(r, reverse("espacios:lista"))
+
+    def test_sigue_exigiendo_dominio_y_politica(self):
+        r = self.client.post(reverse("usuarios:registro"), datos_registro(correo="ana@gmail.com"))
+        self.assertContains(r, "Usa tu correo institucional")
+        datos = datos_registro()
+        del datos["acepta_politica"]
+        r = self.client.post(reverse("usuarios:registro"), datos)
+        self.assertContains(r, "Debes aceptar la política")
+        self.assertFalse(User.objects.exists())
+
+    def test_texto_sin_enlace(self):
+        r = self.client.get(reverse("usuarios:registro"))
+        self.assertNotContains(r, "te enviaremos un enlace")
 
 
 class IngresoTests(TestCase):

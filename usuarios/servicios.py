@@ -53,7 +53,10 @@ def tipo_para_correo(correo):
 
 @transaction.atomic
 def registrar_usuario(datos):
-    """Crea la cuenta INACTIVA y su perfil. Se activa con el enlace del correo.
+    """Crea la cuenta y su perfil.
+
+    Si VERIFICACION_CORREO_ACTIVA es True, la cuenta nace INACTIVA y se activa
+    con el enlace del correo. Si es False, queda activa de una vez.
 
     `datos` son los datos limpios del formulario de registro.
     """
@@ -65,7 +68,7 @@ def registrar_usuario(datos):
         password=datos["password1"],
         first_name=datos["nombre"],
         last_name=datos["apellido"],
-        is_active=False,
+        is_active=not settings.VERIFICACION_CORREO_ACTIVA,
     )
     Perfil.objects.create(
         usuario=usuario,
