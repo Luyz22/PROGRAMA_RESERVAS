@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block titulo %}Reenviar enlace de activación{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="tarjeta p-4 p-md-5">
+      <h1 class="h4 mb-1">Reenviar enlace de activación</h1>
+      <p class="text-body-secondary mb-4">Escribe el correo con el que creaste la cuenta y te enviaremos un enlace nuevo.</p>
+      <form method="post" novalidate>
+        {% csrf_token %}
+        {% include "_campo.html" with campo=form.correo %}
+        <button type="submit" class="btn btn-verde w-100 py-2 mt-4">Enviar enlace</button>
+      </form>
+      <p class="text-center small mt-4 mb-0"><a href="{% url 'usuarios:ingresar' %}" class="fw-semibold">Volver a iniciar sesión</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

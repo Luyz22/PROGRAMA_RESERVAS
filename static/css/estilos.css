@@ -59,6 +59,10 @@ h1, h2, h3, .titulo { font-family: "Space Grotesk", "Inter", sans-serif; font-we
   background: var(--verde-claro); color: var(--verde); font-size: 1.4rem;
 }
 
+/* Recordatorios de la reserva (carnet, llegar antes, menor de edad) */
+.recordatorios { background: var(--ambar); border: 1px solid #f0d68a; color: var(--ambar-texto); border-radius: .6rem; }
+.btn-check:checked + .btn-borde-verde { background: var(--verde); border-color: var(--verde); color: #fff; }
+
 /* Tarjeta "Tu próxima reserva" */
 .proxima { border-left: 4px solid var(--verde); }
 
@@ -118,6 +122,11 @@ h1, h2, h3, .titulo { font-family: "Space Grotesk", "Inter", sans-serif; font-we
 .franja-mantenimiento { background: var(--ambar); border-color: #f0d68a; color: var(--ambar-texto); }
 .franja-tuya { background: var(--verde-claro); border-color: #a9d3cd; color: var(--verde); }
 .franja-pasada { color: #a3aaa9; background: transparent; }
+.franja-cerrado, .franja-festivo { color: #a3aaa9; background: repeating-linear-gradient(135deg, #f3f4f2, #f3f4f2 6px, #eceeeb 6px, #eceeeb 12px); }
+.leyenda .leyenda-cerrado { background: repeating-linear-gradient(135deg, #f3f4f2, #f3f4f2 3px, #dfe1de 3px, #dfe1de 6px); }
+.dia small.text-lowercase { font-size: .65rem; }
+.dia.dia-cerrado:not(.activo) { background: #f3f4f2; color: #a3aaa9; }
+.dia.dia-cerrado:not(.activo) small { color: #b5bbba; }
 
 .leyenda { font-size: .8rem; color: #6b7372; }
 .leyenda i { display: inline-block; width: .8rem; height: .8rem; border-radius: .2rem; vertical-align: -.05rem; margin-right: .25rem; border: 1px solid var(--borde); }

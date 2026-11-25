@@ -130,6 +130,12 @@ LOGIN_URL = 'usuarios:ingresar'
 LOGIN_REDIRECT_URL = 'espacios:lista'
 LOGOUT_REDIRECT_URL = 'usuarios:ingresar'
 
+# Cuentas
+# Solo se pueden registrar correos de este dominio (estudiantes y docentes).
+DOMINIO_INSTITUCIONAL = 'uniminuto.edu.co'
+# Horas que dura el enlace de verificación que se envía al crear la cuenta.
+VERIFICACION_CORREO_HORAS = 48
+
 
 # Email
 # https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
@@ -139,3 +145,4 @@ MAILERS = {
         'BACKEND': 'django.core.mail.backends.console.EmailBackend',
     },
 }
+DEFAULT_FROM_EMAIL = 'Reservas deportivas UNIMINUTO <no-responder@localhost>'

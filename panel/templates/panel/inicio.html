@@ -5,7 +5,12 @@
 
 {% block panel %}
 <h1 class="h2 mb-0">Panel de administración</h1>
-<p class="text-body-secondary text-capitalize">{{ hoy|date:"l" }} <span class="text-lowercase">{{ hoy|date:"j \d\e F" }}</span></p>
+<p class="text-body-secondary text-capitalize mb-2">{{ hoy|date:"l" }} <span class="text-lowercase">{{ hoy|date:"j \d\e F" }}</span></p>
+{% if cierre_hoy %}
+  <div class="alert alert-light border small py-2"><i class="bi bi-calendar-x me-1"></i>Hoy no hay servicio. {{ cierre_hoy.motivo }}.</div>
+{% else %}
+  <div class="mb-3"></div>
+{% endif %}
 
 <div class="row row-cols-2 row-cols-md-4 g-3 mb-4">
   <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Reservas de hoy</div><div class="numero">{{ confirmadas_hoy }}</div></div></div>

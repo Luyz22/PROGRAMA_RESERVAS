@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block titulo %}Revisa tu correo{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="tarjeta p-4 p-md-5 text-center">
+      <span class="icono-espacio mx-auto mb-3"><i class="bi bi-envelope-check"></i></span>
+      <h1 class="h4">Revisa tu correo</h1>
+      <p>Te enviamos un enlace a <strong>{{ correo }}</strong> para activar tu cuenta.</p>
+      <p class="small text-body-secondary">Ábrelo antes de que pasen {{ horas|default:"48" }} horas. Si no lo ves, revisa la carpeta de spam.</p>
+      <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+        <a href="{% url 'usuarios:ingresar' %}" class="btn btn-verde">Ir a iniciar sesión</a>
+        <a href="{% url 'usuarios:reenviar' %}" class="btn btn-outline-secondary">No me llegó el correo</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

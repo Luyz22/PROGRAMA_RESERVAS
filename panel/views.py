@@ -7,17 +7,24 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
-from django.utils import timezone
 from django.views.decorators.http import require_POST
 
 from espacios.models import Espacio
 from reservas.models import Bloqueo, Reserva
-from reservas.servicios import HORA_APERTURA, HORA_CIERRE, crear_bloqueo, horas_del_dia
+from reservas.servicios import cierre_del_dia, crear_bloqueo, franjas_abiertas_del_dia, horas_del_dia, hoy as hoy_local
 from reservas.templatetags.horas import ampm
-from usuarios.models import Perfil
+from usuarios.models import DocenteAutorizado, Perfil
+from usuarios.servicios import (
+    agregar_docentes_autorizados,
+    dominio_institucional,
+    extraer_correos,
+    quitar_docente_autorizado,
+)
 
-from .forms import ROL_ADMINISTRADOR, ROLES, EspacioForm, UsuarioForm
+from .servicios import escribir_csv, filtrar_reservas, leer_filtros, mes_actual, resumen
+from .forms import ROL_ADMINISTRADOR, ROLES, DocentesAutorizadosForm, EspacioForm, UsuarioForm
 
 User = get_user_model()
 POR_PAGINA = 20
@@ -50,7 +57,7 @@ def _leer_fecha(texto):
 
 @solo_administrador
 def inicio(request):
-    hoy = timezone.localdate()
+    hoy = hoy_local()
     espacios = Espacio.objects.filter(activo=True).order_by("nombre")
 
     reservas_hoy = (
@@ -61,8 +68,9 @@ def inicio(request):
     confirmadas_hoy = sum(1 for r in reservas_hoy if r.estado == Reserva.Estado.CONFIRMADA)
     bloqueos_hoy = Bloqueo.objects.filter(fecha=hoy, espacio__activo=True).count()
 
-    # Ocupación: franjas reservadas / franjas que se podían reservar hoy.
-    franjas_totales = espacios.count() * (HORA_CIERRE - HORA_APERTURA) - bloqueos_hoy
+    # Ocupación: franjas reservadas / franjas que se podían reservar hoy
+    # (según el horario de hoy; un domingo o festivo da 0).
+    franjas_totales = franjas_abiertas_del_dia(hoy, espacios.count()) - bloqueos_hoy
     ocupacion = round(100 * confirmadas_hoy / franjas_totales) if franjas_totales > 0 else 0
 
     proximos_bloqueos = (
@@ -74,6 +82,7 @@ def inicio(request):
     return render(request, "panel/inicio.html", {
         "seccion": "inicio",
         "hoy": hoy,
+        "cierre_hoy": cierre_del_dia(hoy),
         "reservas_hoy": reservas_hoy,
         "confirmadas_hoy": confirmadas_hoy,
         "ocupacion": ocupacion,
@@ -163,32 +172,8 @@ def espacio_form(request, espacio_id=None):
 
 @solo_administrador
 def reservas(request):
-    hoy = timezone.localdate()
-    filtros = {
-        "desde": request.GET.get("desde", hoy.isoformat()),
-        "hasta": request.GET.get("hasta", ""),
-        "espacio": request.GET.get("espacio", ""),
-        "estado": request.GET.get("estado", ""),
-        "q": request.GET.get("q", "").strip(),
-    }
-
-    lista = Reserva.objects.select_related("espacio", "usuario", "usuario__perfil")
-    desde, hasta = _leer_fecha(filtros["desde"]), _leer_fecha(filtros["hasta"])
-    if desde:
-        lista = lista.filter(fecha__gte=desde)
-    if hasta:
-        lista = lista.filter(fecha__lte=hasta)
-    if filtros["espacio"].isdigit():
-        lista = lista.filter(espacio_id=filtros["espacio"])
-    if filtros["estado"] in Reserva.Estado.values:
-        lista = lista.filter(estado=filtros["estado"])
-    if filtros["q"]:
-        q = filtros["q"]
-        lista = lista.filter(
-            Q(usuario__first_name__icontains=q) | Q(usuario__last_name__icontains=q)
-            | Q(usuario__email__icontains=q) | Q(usuario__username__icontains=q)
-        )
-    lista = lista.order_by("fecha", "hora_inicio", "espacio__nombre")
+    filtros = leer_filtros(request.GET, desde_por_defecto=hoy_local().isoformat())
+    lista = filtrar_reservas(filtros)
 
     pagina = Paginator(lista, POR_PAGINA).get_page(request.GET.get("pagina"))
     parametros = request.GET.copy()
@@ -199,6 +184,43 @@ def reservas(request):
         "pagina": pagina,
         "filtros": filtros,
         "espacios": Espacio.objects.order_by("nombre"),
+        "deportes": Reserva.Deporte.choices,
+        "estados": Reserva.Estado.choices,
+        "parametros": parametros.urlencode(),
+    })
+
+
+# ---------------------------------------------------------------------------
+# Reportes
+# ---------------------------------------------------------------------------
+
+@solo_administrador
+def reportes(request):
+    inicio_mes, fin_mes = mes_actual(hoy_local())
+    filtros = leer_filtros(
+        request.GET, desde_por_defecto=inicio_mes.isoformat(), hasta_por_defecto=fin_mes.isoformat()
+    )
+    lista = filtrar_reservas(filtros)
+
+    if request.GET.get("formato") == "csv":
+        respuesta = HttpResponse(content_type="text/csv; charset=utf-8")
+        nombre = f"reservas_{filtros['desde'] or 'inicio'}_a_{filtros['hasta'] or 'hoy'}.csv"
+        respuesta["Content-Disposition"] = f'attachment; filename="{nombre}"'
+        escribir_csv(lista, respuesta)
+        return respuesta
+
+    pagina = Paginator(lista, POR_PAGINA).get_page(request.GET.get("pagina"))
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+    parametros.pop("formato", None)
+
+    return render(request, "panel/reportes.html", {
+        "seccion": "reportes",
+        "pagina": pagina,
+        "filtros": filtros,
+        "resumen": resumen(lista),
+        "espacios": Espacio.objects.order_by("nombre"),
+        "deportes": Reserva.Deporte.choices,
         "estados": Reserva.Estado.choices,
         "parametros": parametros.urlencode(),
     })
@@ -257,3 +279,68 @@ def usuario_form(request, usuario_id=None):
         "seccion": "usuarios", "form": form, "usuario_editado": usuario,
         "reservas_usuario": reservas_usuario,
     })
+
+
+# ---------------------------------------------------------------------------
+# Docentes autorizados
+# ---------------------------------------------------------------------------
+
+@solo_administrador
+def docentes_autorizados(request):
+    form = DocentesAutorizadosForm(request.POST or None, request.FILES or None)
+    if request.method == "POST" and form.is_valid():
+        correos = extraer_correos(form.texto())
+        if not correos:
+            messages.error(request, "No encontré correos en lo que pegaste o subiste.")
+        else:
+            resumen = agregar_docentes_autorizados(correos, request.user)
+            partes = [f"{len(resumen['agregados'])} agregados"]
+            if resumen["ya_estaban"]:
+                partes.append(f"{len(resumen['ya_estaban'])} ya estaban")
+            if resumen["promovidos"]:
+                partes.append(f"{len(resumen['promovidos'])} cuentas pasaron a docente")
+            messages.success(request, "Lista actualizada: " + ", ".join(partes) + ".")
+            if resumen["invalidos"]:
+                messages.warning(
+                    request,
+                    f"No se agregaron {len(resumen['invalidos'])} correos porque no son "
+                    f"@{dominio_institucional()} o están mal escritos: "
+                    + ", ".join(resumen["invalidos"][:10])
+                    + ("…" if len(resumen["invalidos"]) > 10 else ""),
+                )
+            return redirect("panel:docentes")
+
+    q = request.GET.get("q", "").strip()
+    lista = DocenteAutorizado.objects.select_related("agregado_por")
+    if q:
+        lista = lista.filter(correo__icontains=q)
+    pagina = Paginator(lista, POR_PAGINA).get_page(request.GET.get("pagina"))
+    parametros = request.GET.copy()
+    parametros.pop("pagina", None)
+
+    # Qué correos de la lista ya tienen cuenta.
+    con_cuenta = set(
+        User.objects.filter(email__in=[d.correo for d in pagina.object_list]).values_list("email", flat=True)
+    )
+    return render(request, "panel/docentes.html", {
+        "seccion": "docentes",
+        "form": form,
+        "pagina": pagina,
+        "q": q,
+        "con_cuenta": con_cuenta,
+        "parametros": parametros.urlencode(),
+        "dominio": dominio_institucional(),
+    })
+
+
+@solo_administrador
+@require_POST
+def quitar_docente(request, docente_id):
+    docente = get_object_or_404(DocenteAutorizado, pk=docente_id)
+    quitar_docente_autorizado(docente)
+    messages.success(
+        request,
+        f"Quitaste {docente.correo} de la lista. Si ya tenía cuenta de docente, sigue siéndolo "
+        "hasta que le cambies el rol en Usuarios.",
+    )
+    return redirect("panel:docentes")

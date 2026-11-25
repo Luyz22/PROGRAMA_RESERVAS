@@ -10,6 +10,11 @@ class Reserva(models.Model):
         CONFIRMADA = "confirmada", "Confirmada"
         CANCELADA = "cancelada", "Cancelada"
 
+    class Deporte(models.TextChoices):
+        MICROFUTBOL = "microfutbol", "Fútbol (microfútbol)"
+        BALONCESTO = "baloncesto", "Baloncesto"
+        VOLEIBOL = "voleibol", "Voleibol"
+
     usuario = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="reservas"
     )
@@ -22,6 +27,17 @@ class Reserva(models.Model):
         max_length=20, choices=Estado.choices, default=Estado.CONFIRMADA
     )
     creada_en = models.DateTimeField(auto_now_add=True)
+
+    # Datos que se piden al reservar. Las reservas anteriores a este formulario
+    # los tienen vacíos.
+    deporte = models.CharField(max_length=20, choices=Deporte.choices, blank=True)
+    participantes = models.PositiveSmallIntegerField(null=True, blank=True)
+    arl_nombre = models.CharField("ARL", max_length=100, blank=True)
+    arl_confirmada = models.BooleanField(
+        "todos los participantes están afiliados a ARL", default=False
+    )
+    recibe_nombre = models.CharField("quién recibe el espacio", max_length=150, blank=True)
+    recibe_correo = models.EmailField("correo de quien recibe el espacio", blank=True)
 
     class Meta:
         ordering = ["fecha", "hora_inicio"]

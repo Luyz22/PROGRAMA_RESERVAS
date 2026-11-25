@@ -18,8 +18,11 @@
         <strong>{{ proxima.hora_inicio|ampm }} – {{ proxima.hora_inicio|hora_fin|ampm }}</strong>
       </div>
     </div>
-    <div class="d-flex gap-2">
-      <a href="{% url 'reservas:franjas' proxima.espacio.pk %}?fecha={{ proxima.fecha|date:'Y-m-d' }}" class="btn btn-borde-verde">Ver día</a>
+    <div class="d-flex flex-wrap gap-2">
+      <a href="{% url 'reservas:confirmacion' proxima.pk %}" class="btn btn-borde-verde">Detalle</a>
+      {% if proxima.espacio.activo %}
+        <a href="{% url 'reservas:franjas' proxima.espacio.pk %}?fecha={{ proxima.fecha|date:'Y-m-d' }}" class="btn btn-borde-verde">Ver día</a>
+      {% endif %}
       <form method="post" action="{% url 'reservas:cancelar' proxima.pk %}"
             onsubmit="return confirm('¿Seguro que quieres cancelar esta reserva?');">
         {% csrf_token %}
@@ -52,7 +55,9 @@
           {% else %}<i class="bi bi-grid"></i>{% endif %}
         </span>
         <h2 class="h5 mb-0">{{ espacio.nombre }}</h2>
-        <p class="small text-body-secondary mb-3">{{ espacio.get_tipo_display }}</p>
+        <p class="small text-body-secondary mb-3">
+          {{ espacio.get_tipo_display }}{% if espacio.aforo_minimo or espacio.aforo_maximo %} · <i class="bi bi-people"></i> {{ espacio.aforo_texto }}{% endif %}
+        </p>
         {% if espacio.descripcion %}<p class="small text-body-secondary">{{ espacio.descripcion }}</p>{% endif %}
         <a href="{% url 'reservas:franjas' espacio.pk %}" class="btn btn-borde-verde mt-auto">Ver franjas</a>
       </div>

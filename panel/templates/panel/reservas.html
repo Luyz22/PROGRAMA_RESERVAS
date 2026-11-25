@@ -29,7 +29,14 @@
       {% for valor, texto in estados %}<option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ texto }}</option>{% endfor %}
     </select>
   </div>
-  <div class="col-12 col-md-8">
+  <div class="col-6 col-md-3">
+    <label class="form-label small fw-medium" for="f-deporte">Deporte</label>
+    <select class="form-select form-select-sm" id="f-deporte" name="deporte">
+      <option value="">Todos</option>
+      {% for valor, texto in deportes %}<option value="{{ valor }}" {% if filtros.deporte == valor %}selected{% endif %}>{{ texto }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-5">
     <label class="form-label small fw-medium" for="f-q">Usuario</label>
     <input type="search" class="form-control form-control-sm" id="f-q" name="q" value="{{ filtros.q }}" placeholder="Nombre o correo">
   </div>

@@ -1,0 +1,19 @@
+{% autoescape off %}Hola, {{ reserva.usuario.first_name|default:reserva.usuario.username }}:
+
+Tu reserva quedó CONFIRMADA.
+
+  Espacio:        {{ reserva.espacio.nombre }}
+  Fecha:          {{ reserva.fecha|date:"l j \d\e F \d\e Y"|lower|capfirst }}
+  Franja:         {{ hora }} – {{ hora_fin }}{% if reserva.deporte %}
+  Deporte:        {{ reserva.get_deporte_display }}{% endif %}
+  Participantes:  {{ reserva.participantes }}
+  ARL:            {{ reserva.arl_nombre }}
+  Recibe:         {{ reserva.recibe_nombre }} ({{ reserva.recibe_correo }})
+
+Ten en cuenta:
+{% for r in recordatorios %}  - {{ r }}
+{% endfor %}
+Si no puedes asistir, cancela la reserva antes de que empiece para que otra persona pueda usar el espacio.
+
+Reservas deportivas UNIMINUTO
+{% endautoescape %}

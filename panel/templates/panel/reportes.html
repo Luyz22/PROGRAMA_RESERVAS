@@ -1,0 +1,100 @@
+{% extends "panel/base_panel.html" %}
+
+{% block titulo %}Reportes · Panel{% endblock %}
+
+{% block panel %}
+<div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+  <div>
+    <h1 class="h2 mb-0">Reportes</h1>
+    <p class="text-body-secondary mb-0">Uso de los espacios en el periodo que elijas.</p>
+  </div>
+  <a href="?{{ parametros }}{% if parametros %}&{% endif %}formato=csv" class="btn btn-verde">
+    <i class="bi bi-download me-1"></i>Descargar CSV
+  </a>
+</div>
+
+<form method="get" class="tarjeta p-3 mb-3 row g-2 align-items-end mx-0">
+  <div class="col-6 col-md-3">
+    <label class="form-label small fw-medium" for="r-desde">Desde</label>
+    <input type="date" class="form-control form-control-sm" id="r-desde" name="desde" value="{{ filtros.desde }}">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small fw-medium" for="r-hasta">Hasta</label>
+    <input type="date" class="form-control form-control-sm" id="r-hasta" name="hasta" value="{{ filtros.hasta }}">
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small fw-medium" for="r-espacio">Espacio</label>
+    <select class="form-select form-select-sm" id="r-espacio" name="espacio">
+      <option value="">Todos</option>
+      {% for e in espacios %}<option value="{{ e.pk }}" {% if filtros.espacio == e.pk|stringformat:"d" %}selected{% endif %}>{{ e.nombre }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small fw-medium" for="r-deporte">Deporte</label>
+    <select class="form-select form-select-sm" id="r-deporte" name="deporte">
+      <option value="">Todos</option>
+      {% for valor, texto in deportes %}<option value="{{ valor }}" {% if filtros.deporte == valor %}selected{% endif %}>{{ texto }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-3">
+    <label class="form-label small fw-medium" for="r-estado">Estado</label>
+    <select class="form-select form-select-sm" id="r-estado" name="estado">
+      <option value="">Todos</option>
+      {% for valor, texto in estados %}<option value="{{ valor }}" {% if filtros.estado == valor %}selected{% endif %}>{{ texto }}</option>{% endfor %}
+    </select>
+  </div>
+  <div class="col-6 col-md-5">
+    <label class="form-label small fw-medium" for="r-q">Usuario</label>
+    <input type="search" class="form-control form-control-sm" id="r-q" name="q" value="{{ filtros.q }}" placeholder="Nombre o correo">
+  </div>
+  <div class="col-12 col-md-4 d-flex gap-2">
+    <button type="submit" class="btn btn-sm btn-verde flex-grow-1">Ver reporte</button>
+    <a href="{% url 'panel:reportes' %}" class="btn btn-sm btn-outline-secondary" title="Volver al mes actual">Este mes</a>
+  </div>
+</form>
+
+<div class="row row-cols-2 row-cols-md-4 g-3 mb-3">
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Reservas confirmadas</div><div class="numero">{{ resumen.confirmadas }}</div></div></div>
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Canceladas</div><div class="numero">{{ resumen.canceladas }}</div><div class="small text-body-secondary">{{ resumen.porcentaje_canceladas }} % del total</div></div></div>
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Personas atendidas</div><div class="numero">{{ resumen.participantes }}</div></div></div>
+  <div class="col"><div class="tarjeta contador p-3 h-100"><div class="small text-body-secondary mb-2">Total de reservas</div><div class="numero">{{ resumen.total }}</div></div></div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-4">
+    <section class="tarjeta p-3 h-100">
+      <h2 class="h6">Por deporte</h2>
+      {% for d in resumen.por_deporte %}
+        <div class="d-flex justify-content-between small py-1 border-bottom"><span>{{ d.nombre }}</span><strong>{{ d.total }}</strong></div>
+      {% empty %}<p class="small text-body-secondary mb-0">Sin datos.</p>{% endfor %}
+    </section>
+  </div>
+  <div class="col-md-4">
+    <section class="tarjeta p-3 h-100">
+      <h2 class="h6">Por espacio</h2>
+      {% for e in resumen.por_espacio %}
+        <div class="d-flex justify-content-between small py-1 border-bottom"><span>{{ e.espacio__nombre }}</span><strong>{{ e.total }}</strong></div>
+      {% empty %}<p class="small text-body-secondary mb-0">Sin datos.</p>{% endfor %}
+    </section>
+  </div>
+  <div class="col-md-4">
+    <section class="tarjeta p-3 h-100">
+      <h2 class="h6">Franjas más pedidas</h2>
+      {% for h in resumen.horas_mas_pedidas %}
+        <div class="d-flex justify-content-between small py-1 border-bottom"><span>{{ h.hora }}</span><strong>{{ h.total }}</strong></div>
+      {% empty %}<p class="small text-body-secondary mb-0">Sin datos.</p>{% endfor %}
+    </section>
+  </div>
+</div>
+<p class="small text-body-secondary">Los totales por deporte, espacio y franja cuentan solo reservas confirmadas.</p>
+
+<div class="tarjeta p-3 p-md-4">
+  <h2 class="h5 mb-3">Detalle</h2>
+  {% if pagina.object_list %}
+    {% include "panel/_tabla_reservas.html" with reservas=pagina.object_list mostrar_fecha=True %}
+    {% include "panel/_paginacion.html" %}
+  {% else %}
+    <p class="text-body-secondary mb-0">No hay reservas con estos filtros.</p>
+  {% endif %}
+</div>
+{% endblock %}

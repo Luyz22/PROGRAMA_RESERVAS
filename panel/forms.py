@@ -1,9 +1,12 @@
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.utils import timezone
 
 from espacios.models import Espacio
-from usuarios.models import Perfil
+from usuarios.forms import limpiar_telefono
+from usuarios.models import MAYORIA_DE_EDAD, Perfil, calcular_edad
+from usuarios.servicios import es_correo_institucional, dominio_institucional
 
 User = get_user_model()
 
@@ -26,11 +29,13 @@ def con_estilo_bootstrap(form):
 class EspacioForm(forms.ModelForm):
     class Meta:
         model = Espacio
-        fields = ["nombre", "tipo", "descripcion", "activo"]
+        fields = ["nombre", "tipo", "descripcion", "aforo_minimo", "aforo_maximo", "activo"]
         labels = {
             "nombre": "Nombre",
             "tipo": "Tipo",
             "descripcion": "Descripción",
+            "aforo_minimo": "Aforo mínimo",
+            "aforo_maximo": "Aforo máximo",
             "activo": "Disponible para reservar",
         }
         help_texts = {
@@ -54,8 +59,9 @@ class EspacioForm(forms.ModelForm):
 class UsuarioForm(forms.Form):
     """Crear o editar un usuario desde el panel.
 
-    El rol junta el tipo de perfil (estudiante, docente, externo) y el
-    permiso de administrador, para que sea una sola elección.
+    El rol junta el tipo de perfil (estudiante o docente) y el permiso de
+    administrador, para que sea una sola elección. Estudiantes y docentes deben
+    usar el correo institucional; el administrador puede usar cualquier correo.
     """
 
     nombre = forms.CharField(max_length=150)
@@ -70,6 +76,18 @@ class UsuarioForm(forms.Form):
         label="Contraseña", strip=False, required=False,
         widget=forms.PasswordInput(attrs={"autocomplete": "new-password"}),
     )
+    # Datos del perfil (no aplican al administrador).
+    fecha_nacimiento = forms.DateField(
+        label="Fecha de nacimiento", required=False,
+        widget=forms.DateInput(attrs={"type": "date"}, format="%Y-%m-%d"),
+    )
+    telefono = forms.CharField(label="Teléfono", max_length=20, required=False)
+    responsable_nombre = forms.CharField(label="Nombre del adulto responsable", max_length=150, required=False)
+    responsable_documento = forms.CharField(label="Documento del adulto responsable", max_length=30, required=False)
+    responsable_telefono = forms.CharField(label="Teléfono del adulto responsable", max_length=20, required=False)
+
+    CAMPOS_PERFIL = ("fecha_nacimiento", "telefono", "responsable_nombre", "responsable_documento", "responsable_telefono")
+    CAMPOS_RESPONSABLE = ("responsable_nombre", "responsable_documento", "responsable_telefono")
 
     def __init__(self, *args, usuario=None, editor=None, **kwargs):
         self.usuario = usuario   # None si es un usuario nuevo
@@ -80,9 +98,11 @@ class UsuarioForm(forms.Form):
                 "nombre": usuario.first_name,
                 "apellido": usuario.last_name,
                 "correo": usuario.email or usuario.username,
-                "rol": ROL_ADMINISTRADOR if usuario.is_staff else (perfil.tipo if perfil else Perfil.Tipo.EXTERNO),
+                "rol": ROL_ADMINISTRADOR if usuario.is_staff else (perfil.tipo if perfil else Perfil.Tipo.ESTUDIANTE),
                 "activo": usuario.is_active,
             }
+            if perfil is not None:
+                kwargs["initial"].update({campo: getattr(perfil, campo) for campo in self.CAMPOS_PERFIL})
         super().__init__(*args, **kwargs)
         if usuario is None:
             self.fields["password"].required = True
@@ -108,6 +128,25 @@ class UsuarioForm(forms.Form):
                 self.add_error("rol", "No puedes quitarte a ti mismo el rol de administrador.")
             if not datos.get("activo"):
                 self.add_error("activo", "No puedes desactivar tu propia cuenta.")
+
+        correo, rol = datos.get("correo"), datos.get("rol")
+        if correo and rol and rol != ROL_ADMINISTRADOR and not es_correo_institucional(correo):
+            self.add_error("correo", f"Estudiantes y docentes deben usar un correo @{dominio_institucional()}.")
+
+        if rol and rol != ROL_ADMINISTRADOR:
+            nacimiento = datos.get("fecha_nacimiento")
+            if nacimiento and nacimiento > timezone.localdate():
+                self.add_error("fecha_nacimiento", "La fecha de nacimiento no puede ser futura.")
+            elif nacimiento and calcular_edad(nacimiento) < MAYORIA_DE_EDAD:
+                for campo in self.CAMPOS_RESPONSABLE:
+                    if not (datos.get(campo) or "").strip():
+                        self.add_error(campo, "Obligatorio para menores de edad.")
+            for campo in ("telefono", "responsable_telefono"):
+                if campo in datos:
+                    try:
+                        datos[campo] = limpiar_telefono(datos.get(campo), obligatorio=False)
+                    except forms.ValidationError as error:
+                        self.add_error(campo, error)
 
         clave = datos.get("password")
         if clave:
@@ -135,5 +174,58 @@ class UsuarioForm(forms.Form):
         usuario.save()
 
         if datos["rol"] != ROL_ADMINISTRADOR:
-            Perfil.objects.update_or_create(usuario=usuario, defaults={"tipo": datos["rol"]})
+            perfil, creado = Perfil.objects.get_or_create(usuario=usuario, defaults={"tipo": datos["rol"]})
+            perfil.tipo = datos["rol"]
+            for campo in self.CAMPOS_PERFIL:
+                setattr(perfil, campo, datos.get(campo) or (None if campo == "fecha_nacimiento" else ""))
+            # Una cuenta creada por el administrador no necesita verificar el correo.
+            if perfil.correo_verificado_en is None:
+                perfil.correo_verificado_en = timezone.now()
+            perfil.save()
         return usuario
+
+
+class DocentesAutorizadosForm(forms.Form):
+    """Agregar correos a la lista: pegándolos o subiendo un archivo CSV."""
+
+    correos = forms.CharField(
+        label="Pega los correos",
+        required=False,
+        widget=forms.Textarea(attrs={"rows": 4, "placeholder": "uno por línea, o separados por comas"}),
+    )
+    archivo = forms.FileField(
+        label="O sube un archivo CSV",
+        required=False,
+        help_text="Se toman los correos de cualquier columna. Máximo 1 MB.",
+    )
+
+    TAMANO_MAXIMO = 1024 * 1024
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        con_estilo_bootstrap(self)
+        self.fields["archivo"].widget.attrs["accept"] = ".csv,text/csv,text/plain"
+
+    def clean_archivo(self):
+        archivo = self.cleaned_data.get("archivo")
+        if not archivo:
+            return ""
+        if archivo.size > self.TAMANO_MAXIMO:
+            raise forms.ValidationError("El archivo pesa más de 1 MB.")
+        contenido = archivo.read()
+        for codificacion in ("utf-8-sig", "latin-1"):
+            try:
+                return contenido.decode(codificacion)
+            except UnicodeDecodeError:
+                continue
+        raise forms.ValidationError("No se pudo leer el archivo. Guárdalo como CSV.")
+
+    def clean(self):
+        datos = super().clean()
+        if not (datos.get("correos") or "").strip() and not datos.get("archivo"):
+            raise forms.ValidationError("Pega al menos un correo o sube un archivo.")
+        return datos
+
+    def texto(self):
+        """Todo lo pegado y lo del archivo, juntos, para sacar los correos."""
+        return "\n".join([self.cleaned_data.get("correos") or "", self.cleaned_data.get("archivo") or ""])

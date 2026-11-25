@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block titulo %}No se pudo activar la cuenta{% endblock %}
+
+{% block contenido %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="tarjeta p-4 p-md-5 text-center">
+      <span class="icono-espacio mx-auto mb-3"><i class="bi bi-exclamation-circle"></i></span>
+      <h1 class="h4">No se pudo activar la cuenta</h1>
+      <p>{{ mensaje }}</p>
+      <div class="d-flex flex-wrap justify-content-center gap-2 mt-4">
+        <a href="{% url 'usuarios:reenviar' %}" class="btn btn-verde">Pedir un enlace nuevo</a>
+        <a href="{% url 'usuarios:ingresar' %}" class="btn btn-outline-secondary">Iniciar sesión</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

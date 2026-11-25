@@ -1,0 +1,12 @@
+{% autoescape off %}Hola, {{ reserva.usuario.first_name|default:reserva.usuario.username }}:
+
+{% if por_administrador %}El administrador de espacios canceló tu reserva.{% else %}Cancelaste tu reserva.{% endif %}
+
+  Espacio:  {{ reserva.espacio.nombre }}
+  Fecha:    {{ reserva.fecha|date:"l j \d\e F \d\e Y"|lower|capfirst }}
+  Franja:   {{ hora }} – {{ hora_fin }}
+
+La franja quedó libre. Si lo necesitas, puedes hacer una reserva nueva.
+
+Reservas deportivas UNIMINUTO
+{% endautoescape %}

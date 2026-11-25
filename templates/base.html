@@ -23,6 +23,7 @@
         <div class="collapse navbar-collapse" id="menu">
           <ul class="navbar-nav me-auto gap-1">
             <li class="nav-item"><a class="nav-link {% block menu_espacios %}{% endblock %}" href="{% url 'espacios:lista' %}">Espacios</a></li>
+            <li class="nav-item"><a class="nav-link {% block menu_mis_reservas %}{% endblock %}" href="{% url 'reservas:mis_reservas' %}">Mis reservas</a></li>
             {% if user.is_staff %}
               <li class="nav-item"><a class="nav-link {% block menu_panel %}{% endblock %}" href="{% url 'panel:inicio' %}">Panel</a></li>
             {% endif %}

@@ -1,12 +1,12 @@
+from django.conf import settings
 from django.contrib import messages
-from django.contrib.auth import login
 from django.contrib.auth.views import LoginView
+from django.core.exceptions import ValidationError
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils import timezone
 
-from .forms import IngresoForm, RegistroForm
-from .models import Perfil
+from .forms import IngresoForm, ReenviarVerificacionForm, RegistroForm
+from .servicios import activar_cuenta, enviar_verificacion, registrar_usuario, reenviar_verificacion
 
 
 class IngresoView(LoginView):
@@ -20,27 +20,46 @@ class IngresoView(LoginView):
             return reverse("panel:inicio")
         return super().get_default_redirect_url()
 
-    def form_valid(self, form):
-        respuesta = super().form_valid(form)
-        # Guarda cuándo aceptó la política de datos, si aún no estaba registrado.
-        Perfil.objects.filter(
-            usuario=form.get_user(), acepto_politica_en__isnull=True
-        ).update(acepto_politica_en=timezone.now())
-        return respuesta
-
 
 def registro(request):
     if request.user.is_authenticated:
         return redirect("espacios:lista")
 
-    if request.method == "POST":
-        form = RegistroForm(request.POST)
-        if form.is_valid():
-            usuario = form.save()
-            login(request, usuario, backend="usuarios.backends.CorreoOUsuarioBackend")
-            messages.success(request, f"¡Bienvenido, {usuario.first_name}! Tu cuenta quedó creada.")
-            return redirect("espacios:lista")
-    else:
-        form = RegistroForm()
+    form = RegistroForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        usuario = registrar_usuario(form.cleaned_data)
+        enviar_verificacion(request, usuario)
+        request.session["correo_registrado"] = usuario.email
+        return redirect("usuarios:registro_enviado")
 
     return render(request, "usuarios/registro.html", {"form": form})
+
+
+def registro_enviado(request):
+    correo = request.session.get("correo_registrado")
+    if not correo:
+        return redirect("usuarios:registro")
+    return render(request, "usuarios/registro_enviado.html", {
+        "correo": correo, "horas": settings.VERIFICACION_CORREO_HORAS,
+    })
+
+
+def activar(request, token):
+    try:
+        usuario = activar_cuenta(token)
+    except ValidationError as error:
+        return render(request, "usuarios/activar_error.html", {"mensaje": error.messages[0]}, status=400)
+    messages.success(request, f"¡Listo, {usuario.first_name}! Tu cuenta está activa. Ya puedes iniciar sesión.")
+    return redirect("usuarios:ingresar")
+
+
+def reenviar(request):
+    form = ReenviarVerificacionForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        reenviar_verificacion(request, form.cleaned_data["correo"])
+        messages.info(
+            request,
+            "Si hay una cuenta pendiente de activar con ese correo, te enviamos un enlace nuevo.",
+        )
+        return redirect("usuarios:ingresar")
+    return render(request, "usuarios/reenviar.html", {"form": form})

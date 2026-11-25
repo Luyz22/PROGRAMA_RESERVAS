@@ -8,31 +8,60 @@
 <a href="{% url 'espacios:lista' %}" class="small fw-semibold text-decoration-none"><i class="bi bi-chevron-left"></i> Espacios</a>
 <h1 class="h2 mt-2 mb-4">{{ espacio.nombre }}</h1>
 
-<form method="post" action="{% url 'reservas:reservar' espacio.pk %}">
-  {% csrf_token %}
+{# Formulario aparte para "Ir a una fecha" (no puede ir dentro del formulario de reservar). #}
+<form id="ir-fecha" method="get"></form>
+
+<form method="get" action="{% url 'reservas:datos' espacio.pk %}">
   <input type="hidden" name="fecha" value="{{ fecha|date:'Y-m-d' }}">
 
   <div class="row g-3">
     <div class="col-lg-8">
       <div class="tarjeta p-3 p-md-4">
-        <h2 class="h6 mb-3">Elige el día</h2>
-        <div class="d-flex flex-wrap gap-2 mb-4">
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+          <h2 class="h6 mb-0">Elige el día</h2>
+          <span class="small text-body-secondary">Puedes reservar hasta el {{ limite|date:"j \d\e F"|lower }}</span>
+        </div>
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+          {% if anterior %}
+            <a href="?fecha={{ anterior|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary" aria-label="Semana anterior"><i class="bi bi-chevron-left"></i></a>
+          {% endif %}
           {% for dia in dias %}
-            <a href="?fecha={{ dia|date:'Y-m-d' }}" class="dia {% if dia == fecha %}activo{% endif %}"
-               {% if dia == fecha %}aria-current="date"{% endif %}>
-              <small class="text-capitalize">{{ dia|date:"D" }}</small>
-              <strong>{{ dia|date:"j" }}</strong>
+            <a href="?fecha={{ dia.fecha|date:'Y-m-d' }}"
+               class="dia {% if dia.fecha == fecha %}activo{% endif %} {% if dia.cierre %}dia-cerrado{% endif %}"
+               {% if dia.fecha == fecha %}aria-current="date"{% endif %}
+               {% if dia.cierre %}title="{{ dia.cierre.motivo }}"{% endif %}>
+              <small class="text-capitalize">{% if dia.fecha == hoy %}Hoy{% else %}{{ dia.fecha|date:"D" }}{% endif %}</small>
+              <strong>{{ dia.fecha|date:"j" }}</strong>
+              <small class="text-lowercase">{% if dia.cierre %}{% if dia.cierre.estado == "festivo" %}Festivo{% else %}Cerrado{% endif %}{% else %}{{ dia.fecha|date:"M" }}{% endif %}</small>
             </a>
           {% endfor %}
+          {% if siguiente %}
+            <a href="?fecha={{ siguiente|date:'Y-m-d' }}" class="btn btn-sm btn-outline-secondary" aria-label="Semana siguiente"><i class="bi bi-chevron-right"></i></a>
+          {% endif %}
         </div>
+        {% if ventana_larga %}
+          <div class="d-flex align-items-center gap-2 mb-4 small">
+            <label for="ir-a" class="text-body-secondary">Ir a una fecha:</label>
+            <input type="date" id="ir-a" name="fecha" form="ir-fecha" class="form-control form-control-sm" style="max-width: 11rem"
+                   min="{{ hoy|date:'Y-m-d' }}" max="{{ limite|date:'Y-m-d' }}" value="{{ fecha|date:'Y-m-d' }}">
+            <button type="submit" form="ir-fecha" class="btn btn-sm btn-outline-secondary">Ir</button>
+          </div>
+        {% else %}
+          <div class="mb-4"></div>
+        {% endif %}
 
         <h2 class="h6 mb-2">Elige la franja · <span class="text-capitalize">{{ fecha|date:"l" }}</span> {{ fecha|date:"j \d\e F"|lower }}</h2>
+        {% if cierre %}
+          <div class="alert alert-light border small py-2"><i class="bi bi-calendar-x me-1"></i>{{ cierre.motivo }}. Este día no se puede reservar.</div>
+        {% endif %}
         <div class="leyenda d-flex flex-wrap gap-3 mb-3">
           <span><i style="background:#fff"></i>Libre</span>
           <span><i style="background:var(--gris)"></i>Ocupada</span>
           <span><i style="background:var(--ambar)"></i>Mantenimiento</span>
           <span><i style="background:var(--verde)"></i>Tu selección</span>
           <span><i style="background:var(--verde-claro)"></i>Tu reserva</span>
+          <span><i class="leyenda-cerrado"></i>Cerrado / Festivo</span>
+          <span><i style="background:transparent"></i><s>Ya pasó</s></span>
         </div>
 
         <div class="franjas">
@@ -45,10 +74,15 @@
                 {{ f.inicio|ampm }} – {{ f.fin|ampm }}
                 <small class="estado-libre">Libre</small>
               </label>
+            {% elif f.estado == "tuya" %}
+              <a href="{% url 'reservas:confirmacion' f.reserva_id %}" class="franja franja-tuya text-decoration-none" title="Ver tu reserva">
+                {{ f.inicio|ampm }} – {{ f.fin|ampm }}
+                <small>Tu reserva · ver</small>
+              </a>
             {% else %}
               <div class="franja franja-{{ f.estado }}" aria-disabled="true">
                 {{ f.inicio|ampm }} – {{ f.fin|ampm }}
-                <small>{% if f.estado == "tuya" %}Tu reserva{% elif f.estado == "ocupada" %}Ocupada{% elif f.estado == "mantenimiento" %}Mantenimiento{% else %}Ya pasó{% endif %}</small>
+                <small>{% if f.estado == "tuya" %}Tu reserva{% elif f.estado == "ocupada" %}Ocupada{% elif f.estado == "mantenimiento" %}Mantenimiento{% elif f.estado == "festivo" %}Festivo{% elif f.estado == "cerrado" %}Cerrado{% else %}Ya pasó{% endif %}</small>
               </div>
             {% endif %}
           {% endfor %}
@@ -66,8 +100,8 @@
         </dl>
         <hr>
         {% if hay_libres %}
-          <p class="small text-body-secondary">Elige una franja libre y confirma. Recibirás la confirmación al instante.</p>
-          <button type="submit" class="btn btn-verde w-100 py-2" id="confirmar" disabled>Confirmar reserva</button>
+          <p class="small text-body-secondary">Elige una franja libre y continúa para completar los datos de la reserva.</p>
+          <button type="submit" class="btn btn-verde w-100 py-2" id="confirmar" disabled>Continuar</button>
         {% else %}
           <p class="small text-body-secondary mb-0">No quedan franjas libres este día. Prueba con otro.</p>
         {% endif %}

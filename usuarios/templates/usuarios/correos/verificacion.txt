@@ -1,0 +1,11 @@
+{% autoescape off %}Hola, {{ usuario.first_name }}:
+
+Creaste una cuenta en Reservas deportivas UNIMINUTO con este correo.
+Para activarla, abre este enlace:
+
+{{ enlace }}
+
+El enlace vence en {{ horas }} horas. Si no fuiste tú, ignora este mensaje.
+
+Reservas deportivas UNIMINUTO
+{% endautoescape %}

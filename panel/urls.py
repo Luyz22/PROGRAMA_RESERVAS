@@ -12,7 +12,10 @@ urlpatterns = [
     path("espacios/nuevo/", views.espacio_form, name="espacio_nuevo"),
     path("espacios/<int:espacio_id>/", views.espacio_form, name="espacio_editar"),
     path("reservas/", views.reservas, name="reservas"),
+    path("reportes/", views.reportes, name="reportes"),
     path("usuarios/", views.usuarios, name="usuarios"),
     path("usuarios/nuevo/", views.usuario_form, name="usuario_nuevo"),
     path("usuarios/<int:usuario_id>/", views.usuario_form, name="usuario_editar"),
+    path("docentes/", views.docentes_autorizados, name="docentes"),
+    path("docentes/<int:docente_id>/quitar/", views.quitar_docente, name="quitar_docente"),
 ]

@@ -4,26 +4,41 @@
 
 {% block contenido %}
 <div class="row justify-content-center">
-  <div class="col-md-9 col-lg-7">
+  <div class="col-md-10 col-lg-8">
     <div class="tarjeta p-4 p-md-5">
-      <h1 class="h4 mb-1">Crear cuenta de usuario externo</h1>
-      <p class="text-body-secondary mb-4">Si eres estudiante o docente, ingresa con la cuenta que te asignó la universidad.</p>
+      <h1 class="h4 mb-1">Crear cuenta</h1>
+      <p class="text-body-secondary mb-4">
+        Para estudiantes y docentes de UNIMINUTO. Usa tu correo institucional: te enviaremos un enlace para activar la cuenta.
+      </p>
 
       <form method="post" novalidate>
         {% csrf_token %}
+        {% if form.non_field_errors %}<div class="alert alert-danger py-2 small">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>{% endif %}
+
         <div class="row g-3">
-          {% for campo in form %}
-            {% if campo.name != "acepta_politica" %}
-              <div class="{% if campo.name == 'correo' %}col-12{% else %}col-sm-6{% endif %}">
-                <label class="form-label fw-medium" for="{{ campo.id_for_label }}">{{ campo.label }}</label>
-                {{ campo }}
-                {% for error in campo.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-                {% if campo.name == "password1" %}
-                  <div class="form-text">Mínimo 8 caracteres, que no sea solo números ni muy común.</div>
-                {% endif %}
-              </div>
-            {% endif %}
-          {% endfor %}
+          <div class="col-sm-6">{% include "_campo.html" with campo=form.nombre %}</div>
+          <div class="col-sm-6">{% include "_campo.html" with campo=form.apellido %}</div>
+          <div class="col-12">{% include "_campo.html" with campo=form.correo %}</div>
+          <div class="col-sm-6">{% include "_campo.html" with campo=form.fecha_nacimiento %}</div>
+          <div class="col-sm-6">{% include "_campo.html" with campo=form.telefono %}</div>
+        </div>
+
+        <fieldset id="responsable" class="border rounded-3 p-3 mt-3" {% if not form.es_menor and not form.responsable_nombre.errors %}hidden{% endif %}>
+          <legend class="h6 float-none w-auto px-2 mb-0">Adulto responsable</legend>
+          <p class="small text-body-secondary">Como eres menor de edad, necesitamos los datos de un adulto responsable. Deberá acompañarte cuando uses el espacio.</p>
+          <div class="row g-3">
+            <div class="col-12">{% include "_campo.html" with campo=form.responsable_nombre %}</div>
+            <div class="col-sm-6">{% include "_campo.html" with campo=form.responsable_documento %}</div>
+            <div class="col-sm-6">{% include "_campo.html" with campo=form.responsable_telefono %}</div>
+          </div>
+        </fieldset>
+
+        <div class="row g-3 mt-0">
+          <div class="col-sm-6">
+            {% include "_campo.html" with campo=form.password1 %}
+            <div class="form-text">Mínimo 8 caracteres, que no sea solo números ni muy común.</div>
+          </div>
+          <div class="col-sm-6">{% include "_campo.html" with campo=form.password2 %}</div>
 
           <div class="col-12">
             <div class="form-check">
@@ -45,4 +60,25 @@
 </div>
 
 {% include "politica_datos.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Muestra los datos del adulto responsable solo si la persona es menor de 18 años.
+  (function () {
+    var campo = document.getElementById('{{ form.fecha_nacimiento.id_for_label }}');
+    var seccion = document.getElementById('responsable');
+    function actualizar() {
+      if (!campo.value) { return; }
+      var nacimiento = new Date(campo.value + 'T00:00:00');
+      var hoy = new Date();
+      var edad = hoy.getFullYear() - nacimiento.getFullYear();
+      var mes = hoy.getMonth() - nacimiento.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < nacimiento.getDate())) { edad--; }
+      seccion.hidden = !(edad < 18);
+    }
+    campo.addEventListener('change', actualizar);
+    actualizar();
+  })();
+</script>
 {% endblock %}

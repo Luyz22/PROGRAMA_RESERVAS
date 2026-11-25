@@ -31,7 +31,7 @@
         <form method="post" novalidate>
           {% csrf_token %}
           {% if form.non_field_errors %}
-            <div class="alert alert-danger py-2">{{ form.non_field_errors|join:" " }}</div>
+            <div class="alert alert-danger py-2 small">{% for e in form.non_field_errors %}{{ e }}{% endfor %}</div>
           {% endif %}
 
           <div class="mb-3">
@@ -42,22 +42,15 @@
             <label class="form-label fw-medium" for="{{ form.password.id_for_label }}">{{ form.password.label }}</label>
             {{ form.password }}
           </div>
-          <div class="form-check mb-4">
-            {{ form.acepta_politica }}
-            <label class="form-check-label small" for="{{ form.acepta_politica.id_for_label }}">
-              Acepto la <a href="#" data-bs-toggle="modal" data-bs-target="#politicaDatos">política de tratamiento de datos personales</a> (Ley 1581 de 2012).
-            </label>
-            {% for error in form.acepta_politica.errors %}<div class="text-danger small mt-1">{{ error }}</div>{% endfor %}
-          </div>
+          <div class="mb-4"></div>
           <input type="hidden" name="next" value="{{ next }}">
           <button type="submit" class="btn btn-verde w-100 py-2">Ingresar</button>
         </form>
 
-        <p class="text-center small mt-4 mb-0">¿Eres usuario externo? <a href="{% url 'usuarios:registro' %}" class="fw-semibold">Crear cuenta</a></p>
+        <p class="text-center small mt-4 mb-0">¿No tienes cuenta? <a href="{% url 'usuarios:registro' %}" class="fw-semibold">Crear cuenta</a></p>
       </div>
     </section>
   </div>
 </div>
 
-{% include "politica_datos.html" %}
 {% endblock %}

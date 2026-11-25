@@ -36,7 +36,10 @@
             <tr>
               <td class="fw-semibold">{{ u.get_full_name|default:u.username }}</td>
               <td class="small">{{ u.email|default:u.username }}</td>
-              <td>{% if u.is_staff %}Administrador{% else %}{{ u.perfil.get_tipo_display|default:"Sin tipo" }}{% endif %}</td>
+              <td>
+                {% if u.is_staff %}Administrador{% else %}{{ u.perfil.get_tipo_display|default:"Sin tipo" }}{% endif %}
+                {% if u.perfil.es_menor %}<div><span class="etiqueta etiqueta-cancelada">Menor de edad</span></div>{% endif %}
+              </td>
               <td>
                 {% if u.is_active %}<span class="etiqueta etiqueta-confirmada">Activo</span>
                 {% else %}<span class="etiqueta etiqueta-cancelada">Desactivado</span>{% endif %}

@@ -4,7 +4,7 @@
     <thead>
       <tr>
         {% if mostrar_fecha %}<th>Fecha</th>{% endif %}
-        <th>Hora</th><th>Espacio</th><th>Usuario</th><th>Estado</th><th class="text-end">Acción</th>
+        <th>Hora</th><th>Espacio</th><th>Usuario</th><th>Deporte</th><th>Personas</th><th>ARL</th><th>Estado</th><th class="text-end">Acción</th>
       </tr>
     </thead>
     <tbody>
@@ -16,6 +16,12 @@
           <td>
             <a href="{% url 'panel:usuario_editar' r.usuario.pk %}" class="text-reset text-decoration-none">{{ r.usuario.get_full_name|default:r.usuario.username }}</a>
             <div class="small text-body-secondary">{% if r.usuario.is_staff %}Administrador{% else %}{{ r.usuario.perfil.get_tipo_display|default:"Sin tipo" }}{% endif %}</div>
+          </td>
+          <td>{{ r.get_deporte_display|default:"—" }}</td>
+          <td>{{ r.participantes|default:"—" }}</td>
+          <td class="small">
+            {{ r.arl_nombre|default:"—" }}
+            {% if r.recibe_nombre %}<div class="text-body-secondary" title="Recibe el espacio">Recibe: {{ r.recibe_nombre }}</div>{% endif %}
           </td>
           <td><span class="etiqueta etiqueta-{{ r.estado }}">{{ r.get_estado_display }}</span></td>
           <td class="text-end">

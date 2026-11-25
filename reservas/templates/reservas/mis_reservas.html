@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% load horas %}
+
+{% block titulo %}Mis reservas{% endblock %}
+{% block menu_mis_reservas %}active{% endblock %}
+
+{% block contenido %}
+<h1 class="h2 mb-1">Mis reservas</h1>
+<p class="text-body-secondary">Consulta o cancela tus reservas</p>
+
+<div class="d-flex flex-wrap gap-2 mb-4" role="group" aria-label="Filtrar reservas">
+  {% for valor, texto in filtros %}
+    <a href="?filtro={{ valor }}" class="pildora {% if valor == filtro %}activa{% endif %}"
+       {% if valor == filtro %}aria-current="true"{% endif %}>{{ texto }}</a>
+  {% endfor %}
+</div>
+
+<div class="tarjeta p-3 p-md-4">
+  {% if pagina.object_list %}
+    {# Celular: una tarjeta por reserva, como en el mockup #}
+    <ul class="list-unstyled mb-0 d-md-none">
+      {% for r in pagina.object_list %}
+        <li class="py-3 {% if not forloop.last %}border-bottom{% endif %} {% if r.ya_paso or r.estado == 'cancelada' %}text-body-secondary{% endif %}">
+          <div class="d-flex justify-content-between align-items-start gap-2">
+            <div>
+              <div class="fw-semibold">{{ r.espacio.nombre }}</div>
+              <div class="small">{{ r.fecha|date:"D j M"|capfirst }} · {{ r.hora_inicio|ampm }} – {{ r.hora_inicio|hora_fin|ampm }}</div>
+              {% if r.deporte %}<div class="small">{{ r.get_deporte_display }}</div>{% endif %}
+            </div>
+            <div class="text-end">
+              <span class="etiqueta etiqueta-{{ r.estado }}">{{ r.get_estado_display }}</span>
+              {% if r.estado == "confirmada" and r.ya_paso %}<div class="small">Ya pasó</div>{% endif %}
+            </div>
+          </div>
+          <div class="d-flex gap-2 mt-2">
+            <a href="{% url 'reservas:confirmacion' r.pk %}" class="btn btn-sm btn-outline-secondary">Ver</a>
+            {% if r.cancelable %}
+              <form method="post" action="{% url 'reservas:cancelar' r.pk %}"
+                    onsubmit="return confirm('¿Seguro que quieres cancelar esta reserva?');">
+                {% csrf_token %}
+                <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar reserva</button>
+              </form>
+            {% endif %}
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+
+    {# Computador: tabla #}
+    <div class="table-responsive d-none d-md-block">
+      <table class="table tabla-panel align-middle mb-0">
+        <thead>
+          <tr><th>Espacio</th><th>Fecha</th><th>Franja</th><th>Deporte</th><th>Estado</th><th class="text-end">Acción</th></tr>
+        </thead>
+        <tbody>
+          {% for r in pagina.object_list %}
+            <tr {% if r.ya_paso or r.estado == "cancelada" %}class="text-body-secondary"{% endif %}>
+              <td class="fw-semibold">{{ r.espacio.nombre }}</td>
+              <td class="text-nowrap">{{ r.fecha|date:"D j M"|capfirst }}</td>
+              <td class="text-nowrap">{{ r.hora_inicio|ampm }} – {{ r.hora_inicio|hora_fin|ampm }}</td>
+              <td>{{ r.get_deporte_display|default:"—" }}</td>
+              <td>
+                <span class="etiqueta etiqueta-{{ r.estado }}">{{ r.get_estado_display }}</span>
+                {% if r.estado == "confirmada" and r.ya_paso %}<div class="small">Ya pasó</div>{% endif %}
+              </td>
+              <td class="text-end text-nowrap">
+                <a href="{% url 'reservas:confirmacion' r.pk %}" class="btn btn-sm btn-outline-secondary">Ver</a>
+                {% if r.cancelable %}
+                  <form method="post" action="{% url 'reservas:cancelar' r.pk %}" class="d-inline"
+                        onsubmit="return confirm('¿Seguro que quieres cancelar esta reserva?');">
+                    {% csrf_token %}
+                    <input type="hidden" name="volver" value="{{ request.get_full_path }}">
+                    <button type="submit" class="btn btn-sm btn-outline-danger">Cancelar reserva</button>
+                  </form>
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% include "panel/_paginacion.html" %}
+  {% else %}
+    <div class="text-center py-4">
+      <p class="text-body-secondary">
+        {% if filtro == "proximas" %}No tienes reservas próximas.{% elif filtro == "historial" %}Todavía no tienes historial.{% else %}Todavía no tienes reservas.{% endif %}
+      </p>
+      <a href="{% url 'espacios:lista' %}" class="btn btn-verde">Reservar un espacio</a>
+    </div>
+  {% endif %}
+</div>
+
+<p class="small text-body-secondary mt-3">Puedes cancelar una reserva mientras la franja no haya empezado. Al cancelar, la franja queda libre para otras personas.</p>
+{% endblock %}
